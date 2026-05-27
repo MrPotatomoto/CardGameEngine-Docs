@@ -762,15 +762,12 @@ img { max-width: 100%; }
   border-radius: var(--radius);
   padding: 16px 20px;
   margin: 24px 0;
-  display: flex;
-  gap: 14px;
   font-size: 0.9rem;
   line-height: 1.7;
+  color: var(--text-muted);
 }
 
-.callout-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
-.callout-body { color: var(--text-muted); }
-.callout-body strong { display: block; margin-bottom: 4px; }
+.callout strong { color: inherit; }
 
 .callout-note {
   background: rgba(124,58,237,0.1);
