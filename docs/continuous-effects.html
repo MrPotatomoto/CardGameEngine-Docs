@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Continuous Effects — Card Game Engine</title>
+  <meta name="description" content="Layer-based stat modifiers, copy effects, and ContinuousEffectManager." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html" class="active">Continuous Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Continuous Effects</div>
+          <h1>Continuous Effects</h1>
+          <p class="doc-lead">Layer-based stat modifiers and copy effects — computed fresh every time you ask.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>A <strong>continuous effect</strong> is an ongoing modification to a card's characteristics that persists until an expiry condition is met. Rather than mutating stats directly, the engine computes a card's <em>current state</em> on demand by applying all active modifiers in layer order.</p>
+        <p>This design means you never have stale stat values — and removing a continuous effect automatically un-does its contribution without requiring explicit rollback code.</p>
+
+        <!-- ── Layer System ── -->
+        <h2 id="layers">Layer System</h2>
+        <p>Modifiers are applied in a defined order (the <em>layer</em> system) to ensure predictable interactions. The layers, in application order:</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Layer</th><th>Name</th><th>What happens</th></tr></thead>
+            <tbody>
+              <tr><td><code>0</code></td><td>Copy</td><td>Card becomes a copy of another card — all characteristics replaced.</td></tr>
+              <tr><td><code>1</code></td><td>Control</td><td>Controller is changed.</td></tr>
+              <tr><td><code>2</code></td><td>TypeChanging</td><td>Type line is modified.</td></tr>
+              <tr><td><code>3</code></td><td>ColorChanging</td><td>Color is modified.</td></tr>
+              <tr><td><code>4</code></td><td>AbilityAdding</td><td>Abilities granted or removed.</td></tr>
+              <tr><td><code>5</code></td><td>PowerToughnessSet</td><td>Power/toughness set to a fixed value.</td></tr>
+              <tr><td><code>6</code></td><td>PowerToughnessModify</td><td>Power/toughness adjusted by ±N.</td></tr>
+              <tr><td><code>7</code></td><td>CounterStats</td><td>Stat bonuses from counters (e.g. +1/+1 counters).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── ContinuousEffectManager ── -->
+        <h2 id="manager">ContinuousEffectManager</h2>
+        <p>The manager lives on <code>GameContext</code>. Register continuous effects at any time; the engine applies them on the next <code>ComputeState()</code> call.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Register a +2/+2 buff for one turn</span>
+<span class="token-keyword">var</span> <span class="token-var">modifier</span>   = <span class="token-keyword">new</span> <span class="token-type">StatModifier</span>(card, powerDef, <span class="token-number">+2</span>);
+<span class="token-keyword">var</span> <span class="token-var">continuous</span> = <span class="token-keyword">new</span> <span class="token-type">ContinuousEffect</span>(
+    modifier:        modifier,
+    source:          effectSource,
+    controller:      controller,
+    expiryCondition: <span class="token-type">ExpiryReason</span>.EndOfTurn
+);
+context.ContinuousEffectManager.Register(continuous);
+
+<span class="token-comment">// Read the current state of the card (base + all modifiers)</span>
+<span class="token-keyword">var</span> <span class="token-var">state</span> = context.ContinuousEffectManager.ComputeState(card);
+<span class="token-keyword">int</span> power = state.GetStat(powerDef);
+
+<span class="token-comment">// Expire all effects marked EndOfTurn</span>
+context.ContinuousEffectManager.ExpireEffects(<span class="token-type">ExpiryReason</span>.EndOfTurn);
+
+<span class="token-comment">// Manually remove a specific effect</span>
+context.ContinuousEffectManager.Remove(continuous);</code></pre>
+        </div>
+
+        <!-- ── Built-in Modifiers ── -->
+        <h2 id="modifiers">Built-in Modifiers</h2>
+
+        <h3 id="stat-modifier">StatModifier</h3>
+        <p>Adds a flat bonus to a single stat. Applied at layer 6 (PowerToughnessModify) by default.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// All creatures get +1/+1 (pump spell pattern)</span>
+<span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">c</span> <span class="token-keyword">in</span> battlefield.Cards.Where(c =&gt; c.IsType(creatureType)))
+{
+    <span class="token-keyword">var</span> <span class="token-var">mod</span> = <span class="token-keyword">new</span> <span class="token-type">StatModifier</span>(c, powerDef,     <span class="token-number">+1</span>);
+    <span class="token-keyword">var</span> <span class="token-var">mod2</span>= <span class="token-keyword">new</span> <span class="token-type">StatModifier</span>(c, toughnessDef, <span class="token-number">+1</span>);
+    context.ContinuousEffectManager.Register(<span class="token-keyword">new</span> <span class="token-type">ContinuousEffect</span>(mod,  source, ctrl, <span class="token-type">ExpiryReason</span>.EndOfTurn));
+    context.ContinuousEffectManager.Register(<span class="token-keyword">new</span> <span class="token-type">ContinuousEffect</span>(mod2, source, ctrl, <span class="token-type">ExpiryReason</span>.EndOfTurn));
+}</code></pre>
+        </div>
+
+        <h3 id="counter-stat-modifier">CounterStatModifier (internal)</h3>
+        <p><code>CounterStatModifier</code> is automatically applied by <code>ComputeState()</code> for any <code>CounterType</code> with <em>Has Stat Effect</em> enabled. You do not construct it directly — configure the <code>CounterType</code> asset in the Inspector instead.</p>
+        <p>For example, a "+1/+1 counter" type with <em>Value Per Counter</em> set to <code>1</code> for both Power and Toughness will cause each counter to contribute +1/+1 in the <em>Counter Stats</em> layer.</p>
+
+        <h3 id="becomes-copy-modifier">BecomesCopyModifier</h3>
+        <p>Applied at layer 0 (Copy). Replaces the target card's type line and stats with those of a source card. The copy is "shallow" — abilities and further modifiers from the source are not inherited by default.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — "Clone" card pattern</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// cloneCard enters as a copy of targetCreature</span>
+<span class="token-keyword">var</span> <span class="token-var">modifier</span>   = <span class="token-keyword">new</span> <span class="token-type">BecomesCopyModifier</span>(cloneCard, sourceCard: targetCreature);
+<span class="token-keyword">var</span> <span class="token-var">continuous</span> = <span class="token-keyword">new</span> <span class="token-type">ContinuousEffect</span>(
+    modifier:        modifier,
+    source:          effectSource,
+    controller:      controller,
+    expiryCondition: <span class="token-type">ExpiryReason</span>.Manual   <span class="token-comment">// persists until removed</span>
+);
+context.ContinuousEffectManager.Register(continuous);
+
+<span class="token-comment">// Compute state — cloneCard now looks like targetCreature</span>
+<span class="token-keyword">var</span> <span class="token-var">state</span> = context.ContinuousEffectManager.ComputeState(cloneCard);
+<span class="token-comment">// state.GetStat(powerDef) returns targetCreature's power</span></code></pre>
+        </div>
+
+        <!-- ── ExpiryReason ── -->
+        <h2 id="expiry">ExpiryReason</h2>
+        <p>Controls when an effect is automatically removed. You call <code>ExpireEffects(reason)</code> at the appropriate game phase.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Value</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>Manual</code></td><td>Never auto-expires; call <code>Remove()</code> explicitly.</td></tr>
+              <tr><td><code>EndOfTurn</code></td><td>Removed when you call <code>ExpireEffects(EndOfTurn)</code>.</td></tr>
+              <tr><td><code>EndOfCombat</code></td><td>Removed when you call <code>ExpireEffects(EndOfCombat)</code>.</td></tr>
+              <tr><td><code>UntilLeavesPlay</code></td><td>Removed when the source card's <code>CardLeftZoneEvent</code> fires.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="events.html">← Events</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="targeting.html">Targeting →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#layers">Layer System</a>
+          <a href="#manager">ContinuousEffectManager</a>
+          <a href="#modifiers">Built-in Modifiers</a>
+          <a href="#stat-modifier" class="toc-sub">StatModifier</a>
+          <a href="#counter-stat-modifier" class="toc-sub">CounterStatModifier</a>
+          <a href="#becomes-copy-modifier" class="toc-sub">BecomesCopyModifier</a>
+          <a href="#expiry">ExpiryReason</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

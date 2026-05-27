@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Events — Card Game Engine</title>
+  <meta name="description" content="EventBus, ReplacementEffectLayer, and the full event catalog." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html" class="active">Events</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Events</div>
+          <h1>Events</h1>
+          <p class="doc-lead">Typed pub/sub messaging — react to anything that happens in the game.</p>
+        </div>
+
+        <h2 id="event-bus">EventBus</h2>
+        <p>The <code>EventBus</code> is the central communication backbone. It lives on <code>GameContext</code> and lets any part of your game publish events that any other part can react to — without direct coupling between systems.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Subscribe &amp; Publish</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Subscribe — receive a typed event</span>
+context.EventBus.Subscribe&lt;<span class="token-type">CardEnteredZoneEvent</span>&gt;(e =&gt;
+{
+    Debug.Log(<span class="token-string">$"{e.Card.Face.CardName} entered {e.Zone.Definition.ZoneName}"</span>);
+});
+
+<span class="token-comment">// Publish — fire an event to all subscribers</span>
+context.EventBus.Publish(<span class="token-keyword">new</span> <span class="token-type">CardEnteredZoneEvent</span>(card, zone));</code></pre>
+        </div>
+
+        <h3 id="unsubscribe">Unsubscribing</h3>
+        <p>Store the returned subscription handle and dispose it when you're done — e.g., when a card leaves the battlefield:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-type">IDisposable</span> sub = context.EventBus.Subscribe&lt;<span class="token-type">TurnStartedEvent</span>&gt;(OnTurnStart);
+
+<span class="token-comment">// Later — clean up</span>
+sub.Dispose();</code></pre>
+        </div>
+
+        <!-- ── Replacement Effects ── -->
+        <h2 id="replacement-effects">Replacement Effects</h2>
+        <p>A replacement effect intercepts an event <em>before</em> it resolves and substitutes different behavior. Classic use cases: "If a creature would die, exile it instead." or "If you would draw while your library is empty, you lose the game instead."</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Indestructible replacement</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.ReplacementEffectLayer.Register&lt;<span class="token-type">CardDestroyedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-comment">// If the target has Indestructible, cancel the destroy</span>
+    <span class="token-keyword">if</span> (e.Card.HasAbility(indestructibleAbility))
+        <span class="token-keyword">return</span> <span class="token-type">ReplacementResult</span>.Cancel;
+
+    <span class="token-keyword">return</span> <span class="token-type">ReplacementResult</span>.Allow;
+});</code></pre>
+        </div>
+
+        <!-- ── Event Catalog ── -->
+        <h2 id="event-catalog">Event Catalog</h2>
+
+        <h3 id="zone-events">Zone Events</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Event</th><th>Key Properties</th><th>Fired by</th></tr></thead>
+            <tbody>
+              <tr><td><code>CardEnteredZoneEvent</code></td><td><code>Card</code>, <code>Zone</code></td><td><code>ZoneManager.Transfer()</code></td></tr>
+              <tr><td><code>CardLeftZoneEvent</code></td><td><code>Card</code>, <code>Zone</code></td><td><code>ZoneManager.Transfer()</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="card-events">Card Events</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Event</th><th>Key Properties</th><th>Fired by</th></tr></thead>
+            <tbody>
+              <tr><td><code>CardDestroyedEvent</code></td><td><code>Card</code>, <code>Source</code></td><td><code>DestroyEffect</code></td></tr>
+              <tr><td><code>DamageDealtEvent</code></td><td><code>Target</code>, <code>Amount</code>, <code>Source</code></td><td><code>DamageEffect</code></td></tr>
+              <tr><td><code>CounterAddedEvent</code></td><td><code>Card</code>, <code>CounterType</code>, <code>Amount</code></td><td><code>AddCounterEffect</code></td></tr>
+              <tr><td><code>CounterRemovedEvent</code></td><td><code>Card</code>, <code>CounterType</code>, <code>Amount</code></td><td><code>RemoveCounterEffect</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="player-events">Player Events</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Event</th><th>Key Properties</th><th>Fired by</th></tr></thead>
+            <tbody>
+              <tr><td><code>LifeGainedEvent</code></td><td><code>Player</code>, <code>Amount</code></td><td><code>GainLifeEffect</code></td></tr>
+              <tr><td><code>LifeLostEvent</code></td><td><code>Player</code>, <code>Amount</code></td><td><code>LoseLifeEffect</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="token-events">Token Events</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Event</th><th>Key Properties</th><th>Fired by</th></tr></thead>
+            <tbody>
+              <tr><td><code>TokenCreatedEvent</code></td><td><code>Token</code>, <code>Controller</code></td><td><code>CreateTokenEffect</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="scry-events">Scry Events</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Event</th><th>Key Properties</th><th>Fired by</th></tr></thead>
+            <tbody>
+              <tr><td><code>ScryStartedEvent</code></td><td><code>State</code> (<code>ScryState</code>), <code>ScryphPlayer</code></td><td><code>ScryEffect</code></td></tr>
+              <tr><td><code>ScryCompletedEvent</code></td><td><code>CardsScryed</code>, <code>Player</code></td><td><code>ScryEffect</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>UI hook pattern:</strong> Subscribe to <code>ScryStartedEvent</code> in your UI layer to display the scry modal. Call <code>e.State.Commit()</code> when the player makes their decision. <code>ScryEffect</code> waits for the commit before reordering — see <a href="scry.html">Scry</a> for the full walkthrough.
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="effects.html">← Effects</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="continuous-effects.html">Continuous Effects →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#event-bus">EventBus</a>
+          <a href="#unsubscribe" class="toc-sub">Unsubscribing</a>
+          <a href="#replacement-effects">Replacement Effects</a>
+          <a href="#event-catalog">Event Catalog</a>
+          <a href="#zone-events" class="toc-sub">Zone Events</a>
+          <a href="#card-events" class="toc-sub">Card Events</a>
+          <a href="#player-events" class="toc-sub">Player Events</a>
+          <a href="#token-events" class="toc-sub">Token Events</a>
+          <a href="#scry-events" class="toc-sub">Scry Events</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

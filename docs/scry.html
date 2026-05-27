@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scry — Card Game Engine</title>
+  <meta name="description" content="ScryEffect, ScryState, and hooking the UI into the scry decision." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html" class="active">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Scry</div>
+          <h1>Scry</h1>
+          <p class="doc-lead">Peek the top N cards of any zone and reorder them — with UI hooks via the event bus.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Scry lets a player look at the top cards of a zone and decide: keep them on top, put them on the bottom, or a mix of both. The implementation is split across three pieces:</p>
+        <ul>
+          <li><strong>ScryEffect</strong> — drives the mechanic; peeks cards, fires events, reorders the zone.</li>
+          <li><strong>ScryState</strong> — carries the peeked cards and lets the player (or UI) commit a decision.</li>
+          <li><strong>ScryStartedEvent / ScryCompletedEvent</strong> — the event bus hooks for UI integration.</li>
+        </ul>
+
+        <!-- ── ScryEffect ── -->
+        <h2 id="scry-effect">ScryEffect</h2>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Constructor</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">effect</span> = <span class="token-keyword">new</span> <span class="token-type">ScryEffect</span>(
+    source:     effectSource,
+    controller: castingPlayer,
+    zone:       deck,
+    count:      <span class="token-number">2</span>          <span class="token-comment">// peek the top 2 cards</span>
+);</code></pre>
+        </div>
+
+        <h3 id="resolution-flow">Resolution flow</h3>
+        <ol>
+          <li>Peeks the top <code>count</code> cards (clamped to zone size). If the zone is empty, returns <code>Fizzled</code>.</li>
+          <li>Creates a <code>ScryState</code> holding the peeked cards.</li>
+          <li>Publishes <code>ScryStartedEvent</code> carrying the state and the scrying player.</li>
+          <li>If any subscriber called <code>state.Commit()</code>, uses the committed top/bottom piles to reorder.</li>
+          <li>If no subscriber committed, applies the default: all peeked cards returned to the top in their original order.</li>
+          <li>Publishes <code>ScryCompletedEvent</code> with the final count.</li>
+        </ol>
+
+        <!-- ── ScryState ── -->
+        <h2 id="scry-state">ScryState</h2>
+        <p>Passed via <code>ScryStartedEvent</code>. Your UI layer calls <code>Commit()</code> once the player has made their decision.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Member</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>PeekedCards</code></td><td>The cards that were revealed. Read-only.</td></tr>
+              <tr><td><code>IsCommitted</code></td><td><code>true</code> after <code>Commit()</code> has been called.</td></tr>
+              <tr><td><code>TopPile</code></td><td>Cards to place back on top, in order. Only valid after commit.</td></tr>
+              <tr><td><code>BottomPile</code></td><td>Cards to place on the bottom, in order. Only valid after commit.</td></tr>
+              <tr><td><code>Commit(top, bottom)</code></td><td>Records the player's decision. Idempotent — subsequent calls are no-ops.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── UI Hook ── -->
+        <h2 id="ui-hook">Connecting your UI</h2>
+        <p>Subscribe to <code>ScryStartedEvent</code> <em>before</em> calling <code>Execute()</code>. Since event handlers are called synchronously, you can show your modal and call <code>Commit()</code> within the handler (for synchronous UIs) or store the state and commit later (for async UIs — see the note below).</p>
+
+        <h3 id="synchronous-ui">Synchronous UI (e.g., automated tests / AI)</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Synchronous subscriber</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">ScryStartedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-comment">// AI decision: always keep peeked cards on top</span>
+    e.State.Commit(
+        topPile:    e.State.PeekedCards,
+        bottomPile: System.Array.Empty&lt;<span class="token-type">CardInstance</span>&gt;()
+    );
+});
+
+<span class="token-keyword">new</span> <span class="token-type">ScryEffect</span>(source, player, deck, <span class="token-number">2</span>).Execute(context);</code></pre>
+        </div>
+
+        <h3 id="async-ui">Async UI (Unity coroutine / UI Toolkit)</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Async pattern</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-type">ScryState</span> pendingState = <span class="token-keyword">null</span>;
+
+context.EventBus.Subscribe&lt;<span class="token-type">ScryStartedEvent</span>&gt;(e =&gt;
+{
+    pendingState = e.State;
+    scryModal.Show(e.State.PeekedCards);  <span class="token-comment">// open your UI</span>
+});
+
+<span class="token-comment">// ... in your UI callback when the player confirms:</span>
+<span class="token-keyword">void</span> OnPlayerConfirmedScry(<span class="token-type">CardInstance</span>[] top, <span class="token-type">CardInstance</span>[] bottom)
+{
+    pendingState?.Commit(top, bottom);
+    pendingState = <span class="token-keyword">null</span>;
+    scryModal.Hide();
+}
+
+<span class="token-comment">// ScryEffect.Execute() will use the default resolution if Commit() hasn't been
+// called by the time the handler returns. For true async UI, drive ScryEffect
+// as a coroutine and await the commit before advancing resolution.</span></code></pre>
+        </div>
+
+        <div class="callout callout-note">
+          <strong>Default resolution:</strong> If no subscriber calls <code>Commit()</code> before the <code>ScryStartedEvent</code> handler returns, all peeked cards are placed back on top in their original order. This is safe for automated resolution and unit tests.
+        </div>
+
+        <!-- ── Zone Layout After Scry ── -->
+        <h2 id="zone-layout">Zone layout after Scry</h2>
+        <p>After <code>ScryEffect</code> resolves, the zone is reordered as:</p>
+        <ol>
+          <li><strong>Top pile</strong> — committed top cards, in the order you specified (index 0 = very top).</li>
+          <li><strong>Non-scried cards</strong> — the remaining cards that were <em>not</em> peeked, in their original order.</li>
+          <li><strong>Bottom pile</strong> — committed bottom cards, in the order you specified.</li>
+        </ol>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="tokens.html">← Tokens</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="tutorials.html">Tutorials →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#scry-effect">ScryEffect</a>
+          <a href="#resolution-flow" class="toc-sub">Resolution flow</a>
+          <a href="#scry-state">ScryState</a>
+          <a href="#ui-hook">Connecting your UI</a>
+          <a href="#synchronous-ui" class="toc-sub">Synchronous UI</a>
+          <a href="#async-ui" class="toc-sub">Async UI</a>
+          <a href="#zone-layout">Zone layout after Scry</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

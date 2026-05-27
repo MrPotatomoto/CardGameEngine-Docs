@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Targeting — Card Game Engine</title>
+  <meta name="description" content="ITargetable, TargetRequirement, TargetSet, and multi-target patterns." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="targeting.html" class="active">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Targeting</div>
+          <h1>Targeting</h1>
+          <p class="doc-lead">Declare what can be targeted — the engine filters candidates and validates legality.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Targeting in Card Game Engine is <strong>declarative</strong>. Instead of writing filtering logic in each spell, you describe <em>what kind of thing can be targeted</em> with a <code>TargetRequirement</code>, then resolve it against a set of candidates to get a <code>TargetSet</code>.</p>
+        <p>This keeps your effect code clean, makes targeting rules reusable across many spells, and allows the engine to validate legality before execution.</p>
+
+        <!-- ── ITargetable ── -->
+        <h2 id="itargetable">ITargetable</h2>
+        <p>Any object that can be the target of a spell or ability must implement <code>ITargetable</code>. The engine provides implementations for:</p>
+        <ul>
+          <li><code>CardInstance</code> — individual cards on the battlefield or in other zones</li>
+          <li><code>Player</code> — a player (for direct damage, life effects, etc.)</li>
+          <li><code>Zone</code> — some effects target entire zones</li>
+        </ul>
+
+        <!-- ── TargetRequirement ── -->
+        <h2 id="target-requirement">TargetRequirement</h2>
+        <p>A <code>TargetRequirement</code> is a predicate + metadata describing the constraints on a valid target. Build one with the fluent builder:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Common requirement patterns</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// "Target creature an opponent controls"</span>
+<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-keyword">new</span> <span class="token-type">TargetRequirement</span>()
+    .OfType(creatureType)
+    .ControlledBy(ControllerFilter.Opponent);
+
+<span class="token-comment">// "Target creature or player"</span>
+<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-keyword">new</span> <span class="token-type">TargetRequirement</span>()
+    .OfKind(<span class="token-type">TargetKind</span>.CreatureOrPlayer);
+
+<span class="token-comment">// "Any target" (creature, planeswalker, or player)</span>
+<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-type">TargetRequirement</span>.AnyTarget;
+
+<span class="token-comment">// Custom predicate</span>
+<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-keyword">new</span> <span class="token-type">TargetRequirement</span>()
+    .WithPredicate(t =&gt; t <span class="token-keyword">is</span> <span class="token-type">CardInstance</span> c &amp;&amp; c.GetCounters(plusOnePluOneCounterType) &gt; <span class="token-number">0</span>);</code></pre>
+        </div>
+
+        <!-- ── TargetSet ── -->
+        <h2 id="target-set">TargetSet</h2>
+        <p>A <code>TargetSet</code> is the result of resolving a <code>TargetRequirement</code> against a pool of candidates. It holds both the filtered <em>legal</em> candidates and the <em>chosen</em> targets (selected by the player or AI).</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// 1. Build a pool of candidates from the battlefield</span>
+<span class="token-keyword">var</span> <span class="token-var">candidates</span> = battlefield.Cards
+    .Cast&lt;<span class="token-type">ITargetable</span>&gt;()
+    .Concat(<span class="token-keyword">new</span> <span class="token-type">ITargetable</span>[] { opponentPlayer });
+
+<span class="token-comment">// 2. Resolve the requirement to get legal targets</span>
+<span class="token-keyword">var</span> <span class="token-var">targetSet</span> = req.Resolve(candidates, castingPlayer);
+
+<span class="token-comment">// 3. Check legality before presenting to player</span>
+<span class="token-keyword">if</span> (!targetSet.HasLegalTargets)
+{
+    <span class="token-comment">// Spell fizzles — no valid targets</span>
+    <span class="token-keyword">return</span> <span class="token-type">EffectResult</span>.Fizzled;
+}
+
+<span class="token-comment">// 4. Player / AI chooses from legal targets</span>
+targetSet.Choose(chosenTarget);
+
+<span class="token-comment">// 5. Validate again at resolution (target may have become illegal)</span>
+<span class="token-keyword">if</span> (!targetSet.IsStillLegal())
+    <span class="token-keyword">return</span> <span class="token-type">EffectResult</span>.Fizzled;
+
+<span class="token-comment">// 6. Use chosen targets</span>
+<span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">t</span> <span class="token-keyword">in</span> targetSet.Chosen)
+    <span class="token-keyword">new</span> <span class="token-type">DamageEffect</span>(source, controller, t, <span class="token-number">3</span>).Execute(context);</code></pre>
+        </div>
+
+        <!-- ── Multi-target ── -->
+        <h2 id="multi-target">Multi-target</h2>
+        <p>For spells that target multiple things (e.g., "destroy up to two target creatures"), set the target count on the requirement:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// "Destroy up to two target creatures"</span>
+<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-keyword">new</span> <span class="token-type">TargetRequirement</span>()
+    .OfType(creatureType)
+    .WithCount(min: <span class="token-number">0</span>, max: <span class="token-number">2</span>);</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Shroud &amp; Hexproof:</strong> Cards with shroud or hexproof can be added to the illegal list of a <code>TargetRequirement</code> through the <code>WithPredicate</code> API or by overriding <code>IsLegalTarget()</code> on the card. The engine will automatically exclude them from <code>targetSet.LegalCandidates</code>.
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="continuous-effects.html">← Continuous Effects</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="tokens.html">Tokens →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#itargetable">ITargetable</a>
+          <a href="#target-requirement">TargetRequirement</a>
+          <a href="#target-set">TargetSet</a>
+          <a href="#multi-target">Multi-target</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

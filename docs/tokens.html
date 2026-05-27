@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tokens — Card Game Engine</title>
+  <meta name="description" content="TokenDefinition, CreateTokenEffect, and the full token lifecycle." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html" class="active">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Tokens</div>
+          <h1>Tokens</h1>
+          <p class="doc-lead">Create, track, and clean up token cards — from Soldier tokens to complex creature tokens.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Tokens are cards that are created during gameplay rather than drawn from a deck. They are backed by a <code>TokenDefinition</code> (a subclass of <code>CardTemplate</code>) and are indistinguishable from regular cards at the <code>CardInstance</code> level — except that <code>card.IsToken</code> returns <code>true</code>.</p>
+
+        <!-- ── TokenDefinition ── -->
+        <h2 id="token-definition">TokenDefinition</h2>
+        <p>Create via <strong>Right-click → Create → Card Game Engine → Token Definition</strong>. A <code>TokenDefinition</code> is a <code>CardTemplate</code> subclass — it carries the same face data (name, types, stats), but is tagged so the engine knows it's a token.</p>
+
+        <div class="callout callout-note">
+          <strong>No deck needed:</strong> Tokens are not part of any player's deck. <code>TokenDefinition</code> assets live in your project as normal ScriptableObjects — reference them in Inspector fields on cards or abilities that create them.
+        </div>
+
+        <!-- ── CreateTokenEffect ── -->
+        <h2 id="create-token-effect">CreateTokenEffect</h2>
+        <p>The built-in effect for creating tokens. It handles all the bookkeeping: instantiating <code>CardInstance</code> objects, setting owner/controller, placing them in the destination zone, and firing the appropriate events.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Create three Soldier tokens</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">effect</span> = <span class="token-keyword">new</span> <span class="token-type">CreateTokenEffect</span>(
+    source:      effectSource,
+    controller:  castingPlayer,   <span class="token-comment">// becomes owner AND controller of the tokens</span>
+    tokenDef:    soldierTokenDef,
+    destination: battlefield,
+    count:       <span class="token-number">3</span>
+);
+
+<span class="token-type">EffectResult</span> result = effect.Execute(context);
+<span class="token-comment">// result.Status == EffectStatus.Success
+// battlefield.Count == 3
+// Each token: IsToken = true, Owner = castingPlayer, Controller = castingPlayer</span></code></pre>
+        </div>
+
+        <h3 id="events-fired">Events Fired</h3>
+        <p>For each token created, <code>CreateTokenEffect</code> fires:</p>
+        <ol>
+          <li><code>TokenCreatedEvent</code> — carries the newly created token instance.</li>
+          <li><code>CardEnteredZoneEvent</code> — fired by <code>ZoneManager.Transfer()</code> as the token enters the destination zone.</li>
+        </ol>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Listening to token creation</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">TokenCreatedEvent</span>&gt;(e =&gt;
+{
+    Debug.Log(<span class="token-string">$"Token created: {e.Token.Face.CardName} controlled by {e.Token.Controller.DisplayName}"</span>);
+    <span class="token-comment">// Spawn a visual GameObject for the token here</span>
+});</code></pre>
+        </div>
+
+        <!-- ── IsToken ── -->
+        <h2 id="is-token">Identifying Tokens</h2>
+        <p>Use <code>card.IsToken</code> at any time to check whether a <code>CardInstance</code> is a token. This returns <code>true</code> if and only if the card's template is a <code>TokenDefinition</code>.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Count non-token creatures on the battlefield</span>
+<span class="token-keyword">int</span> realCreatures = battlefield.Cards
+    .Count(c =&gt; c.IsType(creatureType) &amp;&amp; !c.IsToken);</code></pre>
+        </div>
+
+        <!-- ── Token Cleanup ── -->
+        <h2 id="token-cleanup">Token Cleanup</h2>
+        <p>Tokens that leave the battlefield are automatically removed — they cease to exist in any zone. This is handled by subscribing to <code>CardLeftZoneEvent</code> and removing the token from its destination zone if the destination is not the battlefield.</p>
+
+        <div class="callout callout-warning">
+          <strong>Tokens in graveyard:</strong> By default, when a token would go to a zone that isn't the battlefield (e.g., a graveyard or exile), it blinks out of existence instead. Implement this as a replacement effect or as a <code>CardLeftZoneEvent</code> handler — the engine does not enforce this rule automatically, giving you control over your game's specific token rules.
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Auto-remove tokens on death</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">CardEnteredZoneEvent</span>&gt;(e =&gt;
+{
+    <span class="token-comment">// If a token just entered any zone other than battlefield, remove it</span>
+    <span class="token-keyword">if</span> (e.Card.IsToken &amp;&amp; e.Zone != battlefield)
+    {
+        e.Zone.TryRemove(e.Card);
+        Debug.Log(<span class="token-string">$"Token {e.Card.Face.CardName} ceased to exist."</span>);
+    }
+});</code></pre>
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="targeting.html">← Targeting</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="scry.html">Scry →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#token-definition">TokenDefinition</a>
+          <a href="#create-token-effect">CreateTokenEffect</a>
+          <a href="#events-fired" class="toc-sub">Events Fired</a>
+          <a href="#is-token">Identifying Tokens</a>
+          <a href="#token-cleanup">Token Cleanup</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

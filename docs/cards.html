@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cards — Card Game Engine</title>
+  <meta name="description" content="CardTemplate, CardDefinition, and CardInstance reference." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html" class="active">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Cards</div>
+          <h1>Cards</h1>
+          <p class="doc-lead">The three-layer model: static data, templates, and live instances.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Card Game Engine separates card <em>data</em> from card <em>instances</em> using three types:</p>
+        <ul>
+          <li><strong>CardDefinition</strong> — the logical face of a card (name, type line, stats, abilities). Pure data, never mutated.</li>
+          <li><strong>CardTemplate</strong> — a ScriptableObject that holds one or more <code>CardDefinition</code> faces (for double-faced cards). This is the asset you create in the Project window.</li>
+          <li><strong>CardInstance</strong> — a runtime object representing one physical copy of a card. Tracks owner, controller, current zone, counters, and applied effects.</li>
+        </ul>
+
+        <!-- ── CardDefinition ── -->
+        <h2 id="card-definition">CardDefinition</h2>
+        <p><code>CardDefinition</code> is a ScriptableObject that stores the immutable characteristics of one card face.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>CardName</code></td><td><code>string</code></td><td>Display name of the card.</td></tr>
+              <tr><td><code>Types</code></td><td><code>CardType[]</code></td><td>Primary types (Creature, Instant, Sorcery, etc.).</td></tr>
+              <tr><td><code>Subtypes</code></td><td><code>CardSubtype[]</code></td><td>Subtypes (Warrior, Dragon, Equipment, etc.).</td></tr>
+              <tr><td><code>Supertypes</code></td><td><code>CardSupertype[]</code></td><td>Supertypes (Legendary, Basic, Snow, etc.).</td></tr>
+              <tr><td><code>Stats</code></td><td><code>StatEntry[]</code></td><td>Base stat values (Power, Toughness, Loyalty, etc.).</td></tr>
+              <tr><td><code>Abilities</code></td><td><code>IntrinsicAbility[]</code></td><td>Keyword and granted abilities.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="type-line">Type line helpers</h3>
+        <p>You can query type membership via extension methods on <code>CardInstance</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">bool</span> isCreature  = card.IsType(creatureType);
+<span class="token-keyword">bool</span> isWarrior   = card.IsSubtype(warriorSubtype);
+<span class="token-keyword">bool</span> isLegendary = card.IsSupertype(legendarySuper);</code></pre>
+        </div>
+
+        <!-- ── CardTemplate ── -->
+        <h2 id="card-template">CardTemplate</h2>
+        <p><code>CardTemplate</code> is the asset you create in the Unity Editor. At minimum it holds a single <code>CardDefinition</code> face. Double-faced cards hold two.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Creating a template at runtime (tests / procedural)</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">template</span> = ScriptableObject.CreateInstance&lt;<span class="token-type">CardTemplate</span>&gt;();
+<span class="token-comment">// Assign the front face via the Inspector or reflection in tests.</span>
+<span class="token-comment">// In production code, assign in the Inspector and pass as a reference.</span></code></pre>
+        </div>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong> In production you will always author <code>CardTemplate</code> assets in the Project window and reference them in Inspector fields. Creating them via <code>ScriptableObject.CreateInstance</code> is mainly useful for runtime tests.
+        </div>
+
+        <!-- ── CardInstance ── -->
+        <h2 id="card-instance">CardInstance</h2>
+        <p><code>CardInstance</code> represents one physical copy of a card during a game. It is a plain C# object (not a ScriptableObject or MonoBehaviour) and is created via the <code>new</code> keyword.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Constructor</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">card</span> = <span class="token-keyword">new</span> <span class="token-type">CardInstance</span>(
+    template:   cardTemplate,  <span class="token-comment">// CardTemplate asset</span>
+    owner:      player1,       <span class="token-comment">// Player — may be null for floating cards</span>
+    controller: player1        <span class="token-comment">// Player — defaults to owner if null</span>
+);</code></pre>
+        </div>
+
+        <h3 id="instance-properties">Properties</h3>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>ObjectId</code></td><td><code>Guid</code></td><td>Unique identifier assigned at construction.</td></tr>
+              <tr><td><code>Template</code></td><td><code>CardTemplate</code></td><td>The source template asset.</td></tr>
+              <tr><td><code>Face</code></td><td><code>CardDefinition</code></td><td>Currently active face (front by default).</td></tr>
+              <tr><td><code>Owner</code></td><td><code>Player</code></td><td>Player who owns this card.</td></tr>
+              <tr><td><code>Controller</code></td><td><code>Player</code></td><td>Player who currently controls this card.</td></tr>
+              <tr><td><code>CurrentZone</code></td><td><code>Zone</code></td><td>The zone this card currently occupies (null if unplaced).</td></tr>
+              <tr><td><code>IsToken</code></td><td><code>bool</code></td><td><code>true</code> if the template is a <code>TokenDefinition</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="counters">Counters</h3>
+        <p>Cards can hold any number of named counter types. Counters are plain integers stored per <code>CounterType</code> ScriptableObject key.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Add two +1/+1 counters</span>
+card.AddCounters(plusOneCounterType, <span class="token-number">2</span>);
+
+<span class="token-comment">// Remove one counter (returns false if insufficient)</span>
+<span class="token-keyword">bool</span> removed = card.RemoveCounters(plusOneCounterType, <span class="token-number">1</span>);
+
+<span class="token-comment">// Query current count</span>
+<span class="token-keyword">int</span> total = card.GetCounters(plusOneCounterType);  <span class="token-comment">// → 1</span></code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Stat counters:</strong> If a <code>CounterType</code> has its <em>Has Stat Effect</em> field enabled, every counter of that type adds the specified stat bonus. The bonus is computed via <code>ContinuousEffectManager.ComputeState()</code> — see <a href="continuous-effects.html">Continuous Effects</a>.
+        </div>
+
+        <h3 id="computed-state">Computed State</h3>
+        <p>Current stats (after all modifiers) are obtained by calling <code>ComputeState()</code> rather than reading raw values — this ensures layer-based effects and counters are applied correctly:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">state</span> = context.ContinuousEffectManager.ComputeState(card);
+<span class="token-keyword">int</span> power     = state.GetStat(powerDef);
+<span class="token-keyword">int</span> toughness = state.GetStat(toughnessDef);</code></pre>
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="getting-started.html">← Getting Started</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="zones.html">Zones →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#card-definition">CardDefinition</a>
+          <a href="#type-line" class="toc-sub">Type line helpers</a>
+          <a href="#card-template">CardTemplate</a>
+          <a href="#card-instance">CardInstance</a>
+          <a href="#instance-properties" class="toc-sub">Properties</a>
+          <a href="#counters" class="toc-sub">Counters</a>
+          <a href="#computed-state" class="toc-sub">Computed State</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Card Game Engine — Build card games on Unity</title>
+  <meta name="description" content="A composable, event-driven runtime for Unity that gives you cards, zones, effects, and targeting out of the box." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="home">
+
+  <!-- ── Top Nav ── -->
+  <header class="top-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="docs/getting-started.html">Docs</a>
+        <a href="docs/tutorials.html">Tutorials</a>
+        <a href="docs/api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Hero ── -->
+  <section class="hero">
+    <div class="hero-grid-overlay"></div>
+    <div class="hero-inner">
+      <div class="hero-badge">v1.0 — Now Available</div>
+      <h1 class="hero-title">Build Card Games<br /><span class="hero-accent">Without the Boilerplate</span></h1>
+      <p class="hero-subtitle">
+        Card Game Engine is a composable, event-driven Unity package that gives you
+        cards, zones, effects, targeting, and more — so you can focus on designing
+        great games, not plumbing infrastructure.
+      </p>
+      <div class="hero-actions">
+        <a href="docs/getting-started.html" class="btn btn-primary">Get Started →</a>
+        <a href="docs/tutorials.html" class="btn btn-ghost">View Tutorials</a>
+      </div>
+      <div class="hero-code">
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn" title="Copy code">
+              <span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
+              <span class="copy-label">Copy</span>
+            </button>
+          </div>
+          <pre><code><span class="token-comment">// Deal damage, draw a card, create a token — all in one effect chain</span>
+<span class="token-keyword">var</span> <span class="token-var">effect</span> = <span class="token-keyword">new</span> <span class="token-type">SequenceEffect</span>(source, controller,
+    <span class="token-keyword">new</span> <span class="token-type">DamageEffect</span>(source, controller, target, <span class="token-number">3</span>),
+    <span class="token-keyword">new</span> <span class="token-type">DrawEffect</span>(source, controller, playerHand, <span class="token-number">1</span>),
+    <span class="token-keyword">new</span> <span class="token-type">CreateTokenEffect</span>(source, controller, soldierToken, battlefield, <span class="token-number">2</span>)
+);
+
+<span class="token-keyword">var</span> <span class="token-var">result</span> = effect.Execute(context);
+<span class="token-comment">// result.Status == EffectStatus.Success</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Feature Grid ── -->
+  <section class="features">
+    <div class="section-inner">
+      <h2 class="section-title">Everything you need to ship</h2>
+      <p class="section-subtitle">A complete card-game runtime — from data model to effect resolution.</p>
+      <div class="features-grid">
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M9 4v16M2 10h7M2 16h7"/></svg>
+          </div>
+          <h3>Cards &amp; Templates</h3>
+          <p>Define cards with ScriptableObject templates, type lines, stats, and abilities. Instances track owner, controller, and zone.</p>
+          <a href="docs/cards.html" class="feature-link">Cards docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <h3>Zone System</h3>
+          <p>Deck, hand, graveyard, battlefield — any zone you need. Shuffle, peek, reorder, and transfer cards with a clean API.</p>
+          <a href="docs/zones.html" class="feature-link">Zones docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3>Effect Pipeline</h3>
+          <p>Compose atomic effects into sequences and conditionals. Every effect is testable, cancellable, and event-sourced.</p>
+          <a href="docs/effects.html" class="feature-link">Effects docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+          </div>
+          <h3>Event Bus</h3>
+          <p>Publish and subscribe to typed game events. Replacement effects intercept and redirect before resolution.</p>
+          <a href="docs/events.html" class="feature-link">Events docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <h3>Continuous Effects</h3>
+          <p>Layer-based stat modifications and copy effects. Computed each frame against a fresh base state — no stale values.</p>
+          <a href="docs/continuous-effects.html" class="feature-link">Continuous effects →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <h3>Targeting System</h3>
+          <p>Declare requirements — "a creature your opponent controls" — and let the engine validate legality, filter candidates, and handle multi-target.</p>
+          <a href="docs/targeting.html" class="feature-link">Targeting docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Tokens</h3>
+          <p>Create, track, and clean up token cards at runtime. Tokens know their source and are automatically removed when they leave the battlefield.</p>
+          <a href="docs/tokens.html" class="feature-link">Tokens docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <h3>Scry &amp; Look-Ahead</h3>
+          <p>Built-in Scry lets players peek the top N cards of any zone and reorder them — with full event integration for UI hooks.</p>
+          <a href="docs/scry.html" class="feature-link">Scry docs →</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Code Showcase ── -->
+  <section class="showcase">
+    <div class="section-inner">
+      <div class="showcase-layout">
+        <div class="showcase-text">
+          <h2>Define your game logic in pure C#</h2>
+          <p>No visual scripting, no magic strings. Card Game Engine is code-first — every mechanic is a plain C# class you can unit-test, version-control, and reason about.</p>
+          <ul class="showcase-list">
+            <li>ScriptableObject data — configure in the Inspector, code the rules</li>
+            <li>Full NUnit test suite included — verify your mechanics in Edit Mode</li>
+            <li>Zero singletons — pass <code>GameContext</code> explicitly, test in isolation</li>
+          </ul>
+          <a href="docs/getting-started.html" class="btn btn-primary">Start building →</a>
+        </div>
+        <div class="showcase-code">
+          <div class="code-block">
+            <div class="code-header">
+              <span class="code-lang">C# — Custom Effect</span>
+              <button class="copy-btn" title="Copy code">
+                <span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
+                <span class="copy-label">Copy</span>
+              </button>
+            </div>
+            <pre><code><span class="token-comment">// A custom effect: drain life from target → gain that much life</span>
+<span class="token-keyword">public sealed class</span> <span class="token-type">DrainEffect</span> : <span class="token-type">EffectBase</span>
+{
+    <span class="token-keyword">private readonly</span> <span class="token-type">ITargetable</span> _target;
+    <span class="token-keyword">private readonly int</span> _amount;
+
+    <span class="token-keyword">public</span> <span class="token-type">DrainEffect</span>(<span class="token-type">EffectSource</span> source,
+        <span class="token-type">Player</span> controller,
+        <span class="token-type">ITargetable</span> target,
+        <span class="token-keyword">int</span> amount) : <span class="token-keyword">base</span>(source, controller)
+    {
+        _target  = target;
+        _amount  = amount;
+    }
+
+    <span class="token-keyword">public override</span> <span class="token-type">EffectResult</span> Execute(<span class="token-type">GameContext</span> ctx)
+    {
+        <span class="token-keyword">var</span> <span class="token-var">inner</span> = <span class="token-keyword">new</span> <span class="token-type">SequenceEffect</span>(Source, Controller,
+            <span class="token-keyword">new</span> <span class="token-type">DamageEffect</span>(Source, Controller, _target, _amount),
+            <span class="token-keyword">new</span> <span class="token-type">GainLifeEffect</span>(Source, Controller, Controller, _amount)
+        );
+        <span class="token-keyword">return</span> inner.Execute(ctx);
+    }
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats bar ── -->
+  <section class="stats-bar">
+    <div class="section-inner">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-number">50+</span>
+          <span class="stat-label">Built-in Effects</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">8</span>
+          <span class="stat-label">Modifier Layers</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">55</span>
+          <span class="stat-label">Unit Tests Passing</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">0</span>
+          <span class="stat-label">Singletons</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Quick Start CTA ── -->
+  <section class="cta">
+    <div class="section-inner">
+      <h2>Ready to build your game?</h2>
+      <p>Follow the Getting Started guide to install the package and play your first card in under 10 minutes.</p>
+      <div class="cta-actions">
+        <a href="docs/getting-started.html" class="btn btn-primary btn-lg">Get Started →</a>
+        <a href="docs/tutorials.html" class="btn btn-ghost btn-lg">Browse Tutorials</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </div>
+      <nav class="footer-nav">
+        <a href="docs/getting-started.html">Getting Started</a>
+        <a href="docs/api-reference.html">API Reference</a>
+        <a href="docs/tutorials.html">Tutorials</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <p class="footer-copy">Built with Card Game Engine. MIT License.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
