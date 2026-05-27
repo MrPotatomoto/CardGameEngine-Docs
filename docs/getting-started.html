@@ -133,17 +133,18 @@
             </div>
           </div>
 
-          <!-- .unitypackage -->
+          <!-- .tgz tarball -->
           <div class="install-tab-panel" id="tab-unitypackage">
-            <p>Prefer a drag-and-drop import? Download the <code>.unitypackage</code> from the latest GitHub Release and double-click it to import.</p>
+            <p>Don't want to use Git? Download the <code>.tgz</code> tarball from GitHub Releases and add it via Package Manager.</p>
             <ol>
               <li>Go to the <a href="https://github.com/MrPotatomoto/CardGameEngine-Dev/releases/latest" target="_blank" rel="noopener"><strong>Releases page</strong></a> on GitHub.</li>
-              <li>Under <em>Assets</em>, download <code>CardGameEngine-v1.0.0.unitypackage</code>.</li>
-              <li>Double-click the downloaded file — Unity will open an import dialog.</li>
-              <li>Click <strong>Import All</strong> and wait for compilation to finish.</li>
+              <li>Under <em>Assets</em>, download <code>CardGameEngine-v1.0.0.tgz</code>.</li>
+              <li>In Unity, open <strong>Window → Package Manager</strong>.</li>
+              <li>Click <strong>+</strong> → <em>Add package from tarball…</em></li>
+              <li>Select the downloaded <code>.tgz</code> file and click <strong>Open</strong>.</li>
             </ol>
             <div class="callout callout-note">
-              <strong>Note:</strong> The <code>.unitypackage</code> imports files directly into your <code>Assets/</code> folder. The Git URL method is cleaner for long-term projects since it keeps the package outside your Assets folder and supports one-click updates via Package Manager.
+              <strong>Note:</strong> The tarball installs the package into your project's package cache — the same way the Git URL method works. Unlike an older <code>.unitypackage</code>, it does not scatter files into your <code>Assets/</code> folder.
             </div>
           </div>
 
