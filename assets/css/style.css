@@ -1599,3 +1599,72 @@ img { max-width: 100%; }
 }
 .page-nav-prev a:hover,
 .page-nav-next a:hover { color: #fff; }
+
+/* ─── Centered docs layout (overrides the original fixed-sidebar rules) ───── */
+
+/* 1. Give the layout a max-width and center it, exactly like the landing page */
+.docs-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  min-height: calc(100vh - var(--nav-h));
+  padding-top: var(--nav-h);
+}
+
+/* 2. Sidebar: sticky in the flow rather than fixed to the viewport edge.
+      This keeps it inside the centered container. */
+.sidebar {
+  position: sticky;
+  top: var(--nav-h);
+  height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+  padding: 24px 0 40px;
+  /* left / bottom / z-index no longer needed — sidebar is in normal flow */
+}
+
+/* 3. Main content: no margin-left offset needed now that sidebar is in flow */
+.doc-main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  margin-left: 0;
+}
+
+/* 4. Mobile: revert sidebar to fixed slide-in (must cover full-height viewport) */
+@media (max-width: 768px) {
+  .docs-layout {
+    max-width: 100%;
+    display: block;
+    padding-top: var(--nav-h);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: var(--nav-h);
+    left: 0;
+    bottom: 0;
+    height: auto;
+    width: var(--sidebar-w);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 50;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .doc-main {
+    margin-left: 0;
+    display: block;
+  }
+
+  .doc-content {
+    padding: 32px 20px 80px;
+  }
+}
