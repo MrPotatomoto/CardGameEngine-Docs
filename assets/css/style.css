@@ -759,6 +759,7 @@ img { max-width: 100%; }
 
 /* Callouts */
 .callout {
+  display: block;
   border-radius: var(--radius);
   padding: 16px 20px;
   margin: 24px 0;
@@ -767,25 +768,42 @@ img { max-width: 100%; }
   color: var(--text-muted);
 }
 
+/* Ensure inline elements inside callouts stay inline */
+.callout strong,
+.callout em,
+.callout code {
+  display: inline;
+}
+
 .callout strong { color: inherit; }
+
+.callout code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--cyan);
+}
 
 .callout-note {
   background: rgba(124,58,237,0.1);
   border: 1px solid rgba(124,58,237,0.3);
 }
-.callout-note .callout-body strong { color: var(--accent-light); }
+.callout-note strong { color: var(--accent-light); }
 
 .callout-tip {
   background: rgba(16,185,129,0.1);
   border: 1px solid rgba(16,185,129,0.3);
 }
-.callout-tip .callout-body strong { color: var(--green); }
+.callout-tip strong { color: var(--green); }
 
 .callout-warning {
   background: rgba(245,158,11,0.1);
   border: 1px solid rgba(245,158,11,0.3);
 }
-.callout-warning .callout-body strong { color: var(--yellow); }
+.callout-warning strong { color: var(--yellow); }
 
 /* API table */
 .api-table {
