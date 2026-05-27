@@ -239,6 +239,27 @@
     });
   }
 
+  // ── Install tab switcher ──────────────────────────────────────────────────
+
+  document.querySelectorAll('.install-tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tabId = btn.getAttribute('data-tab');
+      var container = btn.closest('.install-tabs');
+      if (!container) return;
+
+      container.querySelectorAll('.install-tab-btn').forEach(function (b) {
+        b.classList.remove('active');
+      });
+      container.querySelectorAll('.install-tab-panel').forEach(function (p) {
+        p.classList.remove('active');
+      });
+
+      btn.classList.add('active');
+      var panel = container.querySelector('#tab-' + tabId);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
   // ── Keyboard shortcut: / to focus search ──────────────────────────────────
 
   document.addEventListener('keydown', function (e) {
