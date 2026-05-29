@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tokens — Card Game Engine</title>
-  <meta name="description" content="TokenDefinition, CreateTokenEffect, and the full token lifecycle." />
+  <title>Serialization — Card Game Engine</title>
+  <meta name="description" content="Save and restore complete game state with GameSerializer and GameSnapshot. Record and replay game action logs with ReplayLogger." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -76,14 +76,14 @@
             <li><a href="continuous-effects.html">Continuous Effects</a></li>
             <li><a href="replacement-effects.html">Replacement Effects</a></li>
             <li><a href="targeting.html">Targeting</a></li>
-            <li><a href="tokens.html" class="active">Tokens</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
             <li><a href="scry.html">Scry</a></li>
           </ul>
         </div>
         <div class="nav-section">
           <span class="nav-section-label">Tools</span>
           <ul>
-            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="serialization.html" class="active">Serialization</a></li>
             <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
             <li><a href="ability-editor.html">Ability Editor</a></li>
           </ul>
@@ -101,111 +101,112 @@
       <article class="doc-content">
 
         <div class="doc-header">
-          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Tokens</div>
-          <h1>Tokens</h1>
-          <p class="doc-lead">Create, track, and clean up token cards — from Soldier tokens to complex creature tokens.</p>
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Serialization</div>
+          <h1>Serialization</h1>
+          <p class="doc-lead">Save and restore complete game state with <code>GameSerializer</code> and <code>GameSnapshot</code>. Record a log of every game event for replay with <code>ReplayLogger</code>.</p>
         </div>
 
         <h2 id="overview">Overview</h2>
-        <p>Tokens are cards that are created during gameplay rather than drawn from a deck. They are backed by a <code>TokenDefinition</code> (a subclass of <code>CardTemplate</code>) and are indistinguishable from regular cards at the <code>CardInstance</code> level — except that <code>card.IsToken</code> returns <code>true</code>.</p>
+        <p>Card Game Engine includes two complementary persistence tools:</p>
+        <ul>
+          <li><strong>GameSerializer</strong> — captures a complete point-in-time snapshot of zone contents, card state, player stats, resources, and turn metadata. Can be round-tripped to/from JSON. Used for save games, server sync, and the <a href="undo.html">undo/checkpoint system</a>.</li>
+          <li><strong>ReplayLogger</strong> — records every event published through the <code>ReplacementEffectLayer</code> as an ordered log. Use it to reconstruct what happened during a game for review, analytics, or bug reports.</li>
+        </ul>
 
-        <!-- ── TokenDefinition ── -->
-        <h2 id="token-definition">TokenDefinition</h2>
-        <p>Create via <strong>Right-click → Create → Card Game Engine → Token Definition</strong>. A <code>TokenDefinition</code> is a <code>CardTemplate</code> subclass — it carries the same face data (name, types, stats), but is tagged so the engine knows it's a token.</p>
+        <h2 id="game-snapshot">GameSnapshot</h2>
+        <p>A <code>GameSnapshot</code> is a plain serializable C# object. It contains:</p>
+        <ul>
+          <li><strong>Metadata</strong> — capture timestamp, turn number, active player index, priority player index.</li>
+          <li><strong>Player names</strong> — ordered list used for validation during restore.</li>
+          <li><strong>Zone snapshots</strong> — one per registered zone; each contains the ordered list of <code>CardInstanceSnapshot</code> records (template ID, stats, counters, tapped state, face index, active flags).</li>
+          <li><strong>Stack entries</strong> — informational only; live effects cannot be reconstructed generically.</li>
+          <li><strong>Resource pools</strong> — all player resource pool amounts.</li>
+        </ul>
 
         <div class="callout callout-note">
-          <strong>No deck needed:</strong> Tokens are not part of any player's deck. <code>TokenDefinition</code> assets live in your project as normal ScriptableObjects — reference them in Inspector fields on cards or abilities that create them.
+          <strong>Note:</strong> Stack entries are captured for debugging and replay logs, but are <em>not restored</em>. Take snapshots between priority windows (when the stack is empty) for fully restorable saves.
         </div>
 
-        <!-- ── CreateTokenEffect ── -->
-        <h2 id="create-token-effect">CreateTokenEffect</h2>
-        <p>The built-in effect for creating tokens. It handles all the bookkeeping: instantiating <code>CardInstance</code> objects, setting owner/controller, placing them in the destination zone, and firing the appropriate events.</p>
+        <h2 id="capturing">Capturing a snapshot</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Saving game state</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">snapshot</span> = <span class="token-type">GameSerializer</span>.Capture(context, players);
+<span class="token-keyword">string</span> json    = <span class="token-type">GameSerializer</span>.ToJson(snapshot);
+
+<span class="token-comment">// Write to disk, send to server, etc.</span>
+File.WriteAllText(<span class="token-string">"save.json"</span>, json);</code></pre>
+        </div>
+
+        <h2 id="restoring">Restoring from a snapshot</h2>
+        <p>Restoring requires an <code>IGameAssetResolver</code> — an interface you implement that maps the string IDs in the snapshot back to your game's <code>ScriptableObject</code> assets. Typical implementation: look up assets by name in a pre-built dictionary.</p>
 
         <div class="code-block">
           <div class="code-header">
-            <span class="code-lang">C# — Create three Soldier tokens</span>
+            <span class="code-lang">C# — Loading game state</span>
             <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
           </div>
-          <pre><code><span class="token-keyword">var</span> <span class="token-var">effect</span> = <span class="token-keyword">new</span> <span class="token-type">CreateTokenEffect</span>(
-    source:      effectSource,
-    controller:  castingPlayer,   <span class="token-comment">// becomes owner AND controller of the tokens</span>
-    tokenDef:    soldierTokenDef,
-    destination: battlefield,
-    count:       <span class="token-number">3</span>
-);
+          <pre><code><span class="token-keyword">string</span> json     = File.ReadAllText(<span class="token-string">"save.json"</span>);
+<span class="token-keyword">var</span> <span class="token-var">snapshot</span> = <span class="token-type">GameSerializer</span>.FromJson(json);
 
-<span class="token-type">EffectResult</span> result = effect.Execute(context);
-<span class="token-comment">// result.Status == EffectStatus.Success
-// battlefield.Count == 3
-// Each token: IsToken = true, Owner = castingPlayer, Controller = castingPlayer</span></code></pre>
+<span class="token-comment">// resolver maps string IDs back to SO assets</span>
+<span class="token-type">IGameAssetResolver</span> resolver = <span class="token-keyword">new</span> <span class="token-type">MyAssetResolver</span>();
+
+<span class="token-type">GameSerializer</span>.Restore(snapshot, context, players, resolver);
+<span class="token-comment">// Zones are cleared and repopulated; turn/priority state is restored.</span></code></pre>
         </div>
 
-        <h3 id="events-fired">Events Fired</h3>
-        <p>For each token created, <code>CreateTokenEffect</code> fires:</p>
-        <ol>
-          <li><code>TokenCreatedEvent</code> — carries the newly created token instance.</li>
-          <li><code>CardEnteredZoneEvent</code> — fired by <code>ZoneManager.Transfer()</code> as the token enters the destination zone.</li>
-        </ol>
-
+        <h3 id="asset-resolver">Implementing IGameAssetResolver</h3>
         <div class="code-block">
           <div class="code-header">
-            <span class="code-lang">C# — Listening to token creation</span>
+            <span class="code-lang">C# — Minimal resolver</span>
             <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
           </div>
-          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">TokenCreatedEvent</span>&gt;(e =&gt;
+          <pre><code><span class="token-keyword">public class</span> <span class="token-type">MyAssetResolver</span> : <span class="token-type">IGameAssetResolver</span>
 {
-    Debug.Log(<span class="token-string">$"Token created: {e.Token.Face.CardName} controlled by {e.Token.Controller.DisplayName}"</span>);
-    <span class="token-comment">// Spawn a visual GameObject for the token here</span>
-});</code></pre>
+    <span class="token-keyword">private readonly</span> Dictionary&lt;<span class="token-keyword">string</span>, <span class="token-type">CardTemplate</span>&gt;     _templates;
+    <span class="token-keyword">private readonly</span> Dictionary&lt;<span class="token-keyword">string</span>, <span class="token-type">StatDefinition</span>&gt;    _stats;
+    <span class="token-keyword">private readonly</span> Dictionary&lt;<span class="token-keyword">string</span>, <span class="token-type">CounterType</span>&gt;       _counters;
+    <span class="token-comment">// ... other lookups</span>
+
+    <span class="token-keyword">public</span> <span class="token-type">CardTemplate</span>  ResolveTemplate(<span class="token-keyword">string</span> id)     =&gt; _templates.GetValueOrDefault(id);
+    <span class="token-keyword">public</span> <span class="token-type">StatDefinition</span> ResolveStat(<span class="token-keyword">string</span> name)      =&gt; _stats.GetValueOrDefault(name);
+    <span class="token-keyword">public</span> <span class="token-type">CounterType</span>   ResolveCounterType(<span class="token-keyword">string</span> name) =&gt; _counters.GetValueOrDefault(name);
+    <span class="token-comment">// ... implement ResolveStat, ResolveFlag, ResolveZone, etc.</span>
+}</code></pre>
         </div>
 
-        <!-- ── IsToken ── -->
-        <h2 id="is-token">Identifying Tokens</h2>
-        <p>Use <code>card.IsToken</code> at any time to check whether a <code>CardInstance</code> is a token. This returns <code>true</code> if and only if the card's template is a <code>TokenDefinition</code>.</p>
+        <h2 id="replay-logger">ReplayLogger</h2>
+        <p><code>ReplayLogger</code> subscribes to the <code>ReplacementEffectLayer</code> and records every event that passes through it as a timestamped log entry in a <code>GameReplayLog</code>. The log can be serialized to JSON alongside the initial snapshot to produce a complete replay file.</p>
 
         <div class="code-block">
           <div class="code-header">
-            <span class="code-lang">C#</span>
+            <span class="code-lang">C# — Recording a game</span>
             <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
           </div>
-          <pre><code><span class="token-comment">// Count non-token creatures on the battlefield</span>
-<span class="token-keyword">int</span> realCreatures = battlefield.Cards
-    .Count(c =&gt; c.IsType(creatureType) &amp;&amp; !c.IsToken);</code></pre>
+          <pre><code><span class="token-comment">// Start logging at game begin</span>
+<span class="token-keyword">var</span> <span class="token-var">logger</span> = <span class="token-keyword">new</span> <span class="token-type">ReplayLogger</span>(context);
+logger.StartRecording();
+
+<span class="token-comment">// ... game plays out ...</span>
+
+<span class="token-comment">// At game end, capture the log</span>
+logger.StopRecording();
+<span class="token-keyword">var</span> <span class="token-var">log</span>  = logger.GetLog();
+<span class="token-keyword">string</span> json = <span class="token-type">GameSerializer</span>.ToJson(log);
+File.WriteAllText(<span class="token-string">"replay.json"</span>, json);</code></pre>
         </div>
 
-        <!-- ── Token Cleanup ── -->
-        <h2 id="token-cleanup">Token Cleanup</h2>
-        <p>Tokens that leave the battlefield are automatically removed — they cease to exist in any zone. This is handled by subscribing to <code>CardLeftZoneEvent</code> and removing the token from its destination zone if the destination is not the battlefield.</p>
-
-        <div class="callout callout-warning">
-          <strong>Tokens in graveyard:</strong> By default, when a token would go to a zone that isn't the battlefield (e.g., a graveyard or exile), it blinks out of existence instead. Implement this as a replacement effect or as a <code>CardLeftZoneEvent</code> handler — the engine does not enforce this rule automatically, giving you control over your game's specific token rules.
-        </div>
-
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-lang">C# — Auto-remove tokens on death</span>
-            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
-          </div>
-          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">CardEnteredZoneEvent</span>&gt;(e =&gt;
-{
-    <span class="token-comment">// If a token just entered any zone other than battlefield, remove it</span>
-    <span class="token-keyword">if</span> (e.Card.IsToken &amp;&amp; e.Zone != battlefield)
-    {
-        e.Zone.TryRemove(e.Card);
-        Debug.Log(<span class="token-string">$"Token {e.Card.Face.CardName} ceased to exist."</span>);
-    }
-});</code></pre>
-        </div>
-
-        <!-- ── Page Nav ── -->
         <nav class="page-nav">
           <div class="page-nav-prev">
             <span class="page-nav-label">Previous</span>
-            <a href="targeting.html">← Targeting</a>
+            <a href="ai.html">← AI Players</a>
           </div>
           <div class="page-nav-next">
             <span class="page-nav-label">Next</span>
-            <a href="scry.html">Scry →</a>
+            <a href="undo.html">Undo &amp; Checkpoints →</a>
           </div>
         </nav>
 
@@ -215,11 +216,11 @@
         <p class="toc-title">On this page</p>
         <nav class="toc-nav">
           <a href="#overview">Overview</a>
-          <a href="#token-definition">TokenDefinition</a>
-          <a href="#create-token-effect">CreateTokenEffect</a>
-          <a href="#events-fired" class="toc-sub">Events Fired</a>
-          <a href="#is-token">Identifying Tokens</a>
-          <a href="#token-cleanup">Token Cleanup</a>
+          <a href="#game-snapshot">GameSnapshot</a>
+          <a href="#capturing">Capturing a snapshot</a>
+          <a href="#restoring">Restoring</a>
+          <a href="#asset-resolver" class="toc-sub">IGameAssetResolver</a>
+          <a href="#replay-logger">ReplayLogger</a>
         </nav>
       </aside>
     </main>

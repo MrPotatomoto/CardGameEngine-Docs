@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Targeting — Card Game Engine</title>
-  <meta name="description" content="ITargetable, TargetRequirement, TargetSet, and multi-target patterns." />
+  <title>Player Stats — Card Game Engine</title>
+  <meta name="description" content="Track life totals, poison counters, energy, and any other numeric player stat with PlayerStatManager and PlayerStatDefinition." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -64,7 +64,7 @@
           <ul>
             <li><a href="combat.html">Combat</a></li>
             <li><a href="attachments.html">Attachments</a></li>
-            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="player-stats.html" class="active">Player Stats</a></li>
             <li><a href="state-based-actions.html">State-Based Actions</a></li>
             <li><a href="deck-management.html">Deck Management</a></li>
             <li><a href="ai.html">AI Players</a></li>
@@ -75,7 +75,7 @@
           <ul>
             <li><a href="continuous-effects.html">Continuous Effects</a></li>
             <li><a href="replacement-effects.html">Replacement Effects</a></li>
-            <li><a href="targeting.html" class="active">Targeting</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
             <li><a href="tokens.html">Tokens</a></li>
             <li><a href="scry.html">Scry</a></li>
           </ul>
@@ -101,114 +101,106 @@
       <article class="doc-content">
 
         <div class="doc-header">
-          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Targeting</div>
-          <h1>Targeting</h1>
-          <p class="doc-lead">Declare what can be targeted — the engine filters candidates and validates legality.</p>
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Player Stats</div>
+          <h1>Player Stats</h1>
+          <p class="doc-lead">Track life totals, poison counters, energy, and any other numeric player resource with <code>PlayerStatManager</code> and <code>PlayerStatDefinition</code>.</p>
         </div>
 
         <h2 id="overview">Overview</h2>
-        <p>Targeting in Card Game Engine is <strong>declarative</strong>. Instead of writing filtering logic in each spell, you describe <em>what kind of thing can be targeted</em> with a <code>TargetRequirement</code>, then resolve it against a set of candidates to get a <code>TargetSet</code>.</p>
-        <p>This keeps your effect code clean, makes targeting rules reusable across many spells, and allows the engine to validate legality before execution.</p>
+        <p>Card stats (power, toughness) live on <code>CardInstance</code> and are modified by <a href="continuous-effects.html">continuous effects</a>. <em>Player</em> stats are different — they are independent numeric values owned by players, not cards. Life totals, poison counters, and energy counters are classic examples.</p>
+        <p><code>PlayerStatManager</code> is accessed via <code>context.PlayerStatManager</code>. Every write goes through the replacement-effect layer, so damage prevention and other interceptors work automatically.</p>
 
-        <!-- ── ITargetable ── -->
-        <h2 id="itargetable">ITargetable</h2>
-        <p>Any object that can be the target of a spell or ability must implement <code>ITargetable</code>. The engine provides implementations for:</p>
+        <h2 id="defining">Defining a player stat</h2>
+        <p>Create a <code>PlayerStatDefinition</code> asset: <strong>Create → Card Game Engine → Definitions → Player Stat</strong>.</p>
+        <p>Key inspector fields:</p>
         <ul>
-          <li><code>CardInstance</code> — individual cards on the battlefield or in other zones</li>
-          <li><code>Player</code> — a player (for direct damage, life effects, etc.)</li>
-          <li><code>Zone</code> — some effects target entire zones</li>
+          <li><strong>Stat Name</strong> — display name (e.g. "Life", "Poison").</li>
+          <li><strong>Starting Value</strong> — initial value when a player is initialised (e.g. 20 for life).</li>
+          <li><strong>Min Value / Max Value</strong> — clamping bounds. Set <em>Max Value</em> to a very large number if there is no upper cap.</li>
         </ul>
 
-        <!-- ── TargetRequirement ── -->
-        <h2 id="target-requirement">TargetRequirement</h2>
-        <p>A <code>TargetRequirement</code> is a predicate + metadata describing the constraints on a valid target. Build one with the fluent builder:</p>
+        <h2 id="initialising">Initialising players</h2>
+        <p>Call <code>Initialize</code> for each player before the game loop starts. This seeds their stats at <code>StartingValue</code>.</p>
 
         <div class="code-block">
           <div class="code-header">
-            <span class="code-lang">C# — Common requirement patterns</span>
+            <span class="code-lang">C# — Setup</span>
             <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
           </div>
-          <pre><code><span class="token-comment">// "Target creature an opponent controls"</span>
-<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-keyword">new</span> <span class="token-type">TargetRequirement</span>()
-    .OfType(creatureType)
-    .ControlledBy(ControllerFilter.Opponent);
-
-<span class="token-comment">// "Target creature or player"</span>
-<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-keyword">new</span> <span class="token-type">TargetRequirement</span>()
-    .OfKind(<span class="token-type">TargetKind</span>.CreatureOrPlayer);
-
-<span class="token-comment">// "Any target" (creature, planeswalker, or player)</span>
-<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-type">TargetRequirement</span>.AnyTarget;
-
-<span class="token-comment">// Custom predicate</span>
-<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-keyword">new</span> <span class="token-type">TargetRequirement</span>()
-    .WithPredicate(t =&gt; t <span class="token-keyword">is</span> <span class="token-type">CardInstance</span> c &amp;&amp; c.GetCounters(plusOnePluOneCounterType) &gt; <span class="token-number">0</span>);</code></pre>
+          <pre><code><span class="token-comment">// lifeStatDef.StartingValue = 20, poisonStatDef.StartingValue = 0</span>
+context.PlayerStatManager.Initialize(player1, <span class="token-keyword">new</span>[] { lifeStatDef, poisonStatDef });
+context.PlayerStatManager.Initialize(player2, <span class="token-keyword">new</span>[] { lifeStatDef, poisonStatDef });</code></pre>
         </div>
 
-        <!-- ── TargetSet ── -->
-        <h2 id="target-set">TargetSet</h2>
-        <p>A <code>TargetSet</code> is the result of resolving a <code>TargetRequirement</code> against a pool of candidates. It holds both the filtered <em>legal</em> candidates and the <em>chosen</em> targets (selected by the player or AI).</p>
-
+        <h2 id="reading">Reading a stat</h2>
         <div class="code-block">
           <div class="code-header">
             <span class="code-lang">C#</span>
             <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
           </div>
-          <pre><code><span class="token-comment">// 1. Build a pool of candidates from the battlefield</span>
-<span class="token-keyword">var</span> <span class="token-var">candidates</span> = battlefield.Cards
-    .Cast&lt;<span class="token-type">ITargetable</span>&gt;()
-    .Concat(<span class="token-keyword">new</span> <span class="token-type">ITargetable</span>[] { opponentPlayer });
+          <pre><code><span class="token-keyword">int</span> life = context.PlayerStatManager.GetStat(player1, lifeStatDef);
+Debug.Log(<span class="token-string">$"{player1.DisplayName} has {life} life."</span>);</code></pre>
+        </div>
 
-<span class="token-comment">// 2. Resolve the requirement to get legal targets</span>
-<span class="token-keyword">var</span> <span class="token-var">targetSet</span> = req.Resolve(candidates, castingPlayer);
+        <h2 id="writing">Modifying a stat</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Dealing player damage / gaining life</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">statMgr</span> = context.PlayerStatManager;
+<span class="token-keyword">var</span> <span class="token-var">source</span>  = <span class="token-keyword">new</span> <span class="token-type">EffectSource</span>(Guid.NewGuid(), <span class="token-string">"Lava Spike"</span>);
 
-<span class="token-comment">// 3. Check legality before presenting to player</span>
-<span class="token-keyword">if</span> (!targetSet.HasLegalTargets)
+<span class="token-comment">// Deal 3 damage to player (subtract from life)</span>
+statMgr.ModifyStat(player1, lifeStatDef, delta: -<span class="token-number">3</span>, source);
+
+<span class="token-comment">// Set life to a specific value</span>
+statMgr.SetStat(player1, lifeStatDef, newValue: <span class="token-number">1</span>, source);
+
+<span class="token-comment">// Gain 4 life</span>
+statMgr.ModifyStat(player1, lifeStatDef, delta: +<span class="token-number">4</span>, source);</code></pre>
+        </div>
+
+        <p>All writes are clamped to the stat's configured bounds and fire a <code>PlayerStatChangedEvent</code> through the replacement-effect layer. Replacement effects (like damage prevention) can intercept and modify the change before it is applied.</p>
+
+        <h2 id="events">Events</h2>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>When</th><th>Key fields</th></tr></thead>
+          <tbody>
+            <tr><td><code>PlayerStatChangedEvent</code></td><td>Any successful write that changes the value.</td><td><code>Player</code>, <code>Stat</code>, <code>OldValue</code>, <code>NewValue</code></td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="sba-integration">SBA integration — player elimination</h2>
+        <p>The engine ships a <code>PlayerEliminationSBA</code> that checks whether a player's stat has reached the configured minimum. Register it to automatically eliminate players at 0 life:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Player elimination SBA</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// playerEliminationSBA is a PlayerEliminationSBA ScriptableObject.
+// Configure: Stat = lifeStatDef, Elimination Threshold = 0.</span>
+context.StateBasedActionManager.Register(playerEliminationSBA);
+
+<span class="token-comment">// Subscribe to know when a player is eliminated</span>
+context.EventBus.Subscribe&lt;<span class="token-type">PlayerEliminatedEvent</span>&gt;(e =&gt;
 {
-    <span class="token-comment">// Spell fizzles — no valid targets</span>
-    <span class="token-keyword">return</span> <span class="token-type">EffectResult</span>.Fizzled;
-}
-
-<span class="token-comment">// 4. Player / AI chooses from legal targets</span>
-targetSet.Choose(chosenTarget);
-
-<span class="token-comment">// 5. Validate again at resolution (target may have become illegal)</span>
-<span class="token-keyword">if</span> (!targetSet.IsStillLegal())
-    <span class="token-keyword">return</span> <span class="token-type">EffectResult</span>.Fizzled;
-
-<span class="token-comment">// 6. Use chosen targets</span>
-<span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">t</span> <span class="token-keyword">in</span> targetSet.Chosen)
-    <span class="token-keyword">new</span> <span class="token-type">DamageEffect</span>(source, controller, t, <span class="token-number">3</span>).Execute(context);</code></pre>
+    Debug.Log(<span class="token-string">$"{e.Player.DisplayName} has been eliminated!"</span>);
+    <span class="token-comment">// trigger game-over or remove the player from the turn order</span>
+});</code></pre>
         </div>
 
-        <!-- ── Multi-target ── -->
-        <h2 id="multi-target">Multi-target</h2>
-        <p>For spells that target multiple things (e.g., "destroy up to two target creatures"), set the target count on the requirement:</p>
+        <p>Create the SBA asset via <strong>Create → Card Game Engine → Rules → Player Elimination SBA</strong>.</p>
 
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-lang">C#</span>
-            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
-          </div>
-          <pre><code><span class="token-comment">// "Destroy up to two target creatures"</span>
-<span class="token-keyword">var</span> <span class="token-var">req</span> = <span class="token-keyword">new</span> <span class="token-type">TargetRequirement</span>()
-    .OfType(creatureType)
-    .WithCount(min: <span class="token-number">0</span>, max: <span class="token-number">2</span>);</code></pre>
-        </div>
-
-        <div class="callout callout-tip">
-          <strong>Shroud &amp; Hexproof:</strong> Cards with shroud or hexproof can be added to the illegal list of a <code>TargetRequirement</code> through the <code>WithPredicate</code> API or by overriding <code>IsLegalTarget()</code> on the card. The engine will automatically exclude them from <code>targetSet.LegalCandidates</code>.
-        </div>
-
-        <!-- ── Page Nav ── -->
         <nav class="page-nav">
           <div class="page-nav-prev">
             <span class="page-nav-label">Previous</span>
-            <a href="continuous-effects.html">← Continuous Effects</a>
+            <a href="attachments.html">← Attachments</a>
           </div>
           <div class="page-nav-next">
             <span class="page-nav-label">Next</span>
-            <a href="tokens.html">Tokens →</a>
+            <a href="state-based-actions.html">State-Based Actions →</a>
           </div>
         </nav>
 
@@ -218,10 +210,12 @@ targetSet.Choose(chosenTarget);
         <p class="toc-title">On this page</p>
         <nav class="toc-nav">
           <a href="#overview">Overview</a>
-          <a href="#itargetable">ITargetable</a>
-          <a href="#target-requirement">TargetRequirement</a>
-          <a href="#target-set">TargetSet</a>
-          <a href="#multi-target">Multi-target</a>
+          <a href="#defining">Defining a stat</a>
+          <a href="#initialising">Initialising players</a>
+          <a href="#reading">Reading a stat</a>
+          <a href="#writing">Modifying a stat</a>
+          <a href="#events">Events</a>
+          <a href="#sba-integration">SBA integration</a>
         </nav>
       </aside>
     </main>

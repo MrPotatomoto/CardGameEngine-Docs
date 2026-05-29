@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deck Management — Card Game Engine</title>
+  <meta name="description" content="DeckDefinition, MulliganSystem, and SearchEffect: build deck lists in the Inspector, deal opening hands with mulligan support, and implement tutor effects." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html">State-Based Actions</a></li>
+            <li><a href="deck-management.html" class="active">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Deck Management</div>
+          <h1>Deck Management</h1>
+          <p class="doc-lead">Build deck lists in the Inspector with <code>DeckDefinition</code>, deal opening hands with full mulligan support via <code>MulliganSystem</code>, and implement tutor effects with <code>SearchEffect</code>.</p>
+        </div>
+
+        <h2 id="deck-definition">DeckDefinition</h2>
+        <p><code>DeckDefinition</code> is a <code>ScriptableObject</code> that holds an Inspector-editable list of cards and copy counts. Create one via <strong>Create → Card Game Engine → Deck Definition</strong>.</p>
+        <p>Each entry in the list is a <code>DeckEntry</code> — a <code>CardTemplate</code> reference and a copy count (minimum 1). The order of entries determines the initial zone order before shuffling.</p>
+
+        <h3 id="populate">Populating a library zone</h3>
+        <p>Call <code>Populate</code> from your <code>GameBootstrapper</code> after creating your zones. It instantiates one <code>CardInstance</code> per entry × count and transfers each into the zone via <code>ZoneManager.Transfer</code>, firing <code>CardEnteredZoneEvent</code> for each card.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — GameBootstrapper.SetupPlayerResources</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">protected override void</span> SetupPlayerResources(<span class="token-type">Player</span> player, <span class="token-type">GameContext</span> ctx)
+{
+    <span class="token-keyword">var</span> <span class="token-var">library</span> = ctx.ZoneManager.GetZone(_libraryDefinition, player);
+    _deckDefinition.Populate(library, owner: player, controller: player, ctx);
+    <span class="token-comment">// Shuffle happens later in MulliganSystem — or call library.Shuffle() here</span>
+}</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> Entries with a null template or a count ≤ 0 are silently skipped. Use <code>DeckDefinition.TotalCardCount</code> to verify the total before play begins.
+        </div>
+
+        <h2 id="mulligan-system">MulliganSystem</h2>
+        <p><code>MulliganSystem</code> handles the opening-hand ritual: shuffle the library, deal an opening hand, and offer players mulligans until they keep or exhaust their allowance.</p>
+
+        <h3 id="mulligan-setup">Setup</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Wiring up MulliganSystem</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// 1. Subscribe to the mulligan offer event before calling RunOpeningHands.</span>
+Context.ReplacementEffectLayer.Process(<span class="token-keyword">new</span> <span class="token-type">MulliganOfferedEvent</span>(...)); <span class="token-comment">// handled internally</span>
+
+context.EventBus.Subscribe&lt;<span class="token-type">MulliganOfferedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-comment">// Show UI to the player, then call Keep or Mulligan on the state object.</span>
+    <span class="token-keyword">bool</span> wantsToMulligan = ShowMulliganUI(e.State.Hand, e.State.CardsInNextHand);
+    <span class="token-keyword">if</span> (wantsToMulligan)
+        e.State.Mulligan();   <span class="token-comment">// return entire hand</span>
+    <span class="token-keyword">else</span>
+        e.State.Keep();
+});
+
+<span class="token-comment">// 2. Create the system and run it.</span>
+<span class="token-keyword">var</span> <span class="token-var">mulliganSystem</span> = <span class="token-keyword">new</span> <span class="token-type">MulliganSystem</span>(openingHandSize: <span class="token-number">7</span>, maxMulligans: <span class="token-number">7</span>);
+mulliganSystem.DrawTag         = drawTransferTag;     <span class="token-comment">// optional — identifies draws</span>
+mulliganSystem.MulliganReturnTag = mulliganReturnTag; <span class="token-comment">// optional</span>
+
+mulliganSystem.RunOpeningHands(players, context, _libraryDefinition, _handDefinition);</code></pre>
+        </div>
+
+        <h3 id="mulligan-state">MulliganState</h3>
+        <p>The event carries a <code>MulliganState</code> object that your subscriber uses to record the player's decision:</p>
+
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Player</code></td><td>The player being offered the mulligan.</td></tr>
+            <tr><td><code>Hand</code></td><td>Snapshot of current hand cards.</td></tr>
+            <tr><td><code>MulliganNumber</code></td><td><code>0</code> = first offer; <code>1</code> = after first mulligan; etc.</td></tr>
+            <tr><td><code>CardsInNextHand</code></td><td>How many cards they would draw if they mulligan now.</td></tr>
+            <tr><td><code>Keep()</code></td><td>Accept this hand. The mulligan sequence ends.</td></tr>
+            <tr><td><code>Mulligan()</code></td><td>Return entire hand to library, draw fewer cards.</td></tr>
+            <tr><td><code>Mulligan(cardsToReturn)</code></td><td>Return a specific subset of cards (partial mulligan variant).</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="mulligan-variants">Mulligan variants</h3>
+        <p>The default hand-size reduction is Vancouver rules (draw one fewer per mulligan). Override the delegate to use other schemes:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — London mulligan (always draw 7)</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// London: always draw 7, but after keeping the player puts back N cards.
+// (The "put back" step is a separate mechanic your game layer handles.)</span>
+mulliganSystem.HandSizeAfterMulligan = n =&gt; <span class="token-number">7</span>;
+
+<span class="token-comment">// Flat -2 per mulligan</span>
+mulliganSystem.HandSizeAfterMulligan = n =&gt; Math.Max(<span class="token-number">0</span>, <span class="token-number">7</span> - n * <span class="token-number">2</span>);</code></pre>
+        </div>
+
+        <h2 id="search-effect">SearchEffect — Library Search (Tutor)</h2>
+        <p><code>SearchEffect</code> implements the "search your library for a card" mechanic. It collects eligible cards from the library, fires a <code>LibrarySearchStartedEvent</code> so your UI can present the choice, moves the chosen card to the destination zone, shuffles the library, and fires <code>LibrarySearchCompletedEvent</code>.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — "Search for a creature, put it into your hand"</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// 1. Subscribe to the search event to show UI and record the choice.</span>
+context.EventBus.Subscribe&lt;<span class="token-type">LibrarySearchStartedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-comment">// e.State.Candidates is the filtered list the player can pick from.</span>
+    <span class="token-type">CardInstance</span> chosen = ShowSearchUI(e.State.Candidates, e.State.SearchingPlayer);
+    <span class="token-keyword">if</span> (chosen != <span class="token-keyword">null</span>)
+        e.State.Choose(chosen);
+    <span class="token-keyword">else</span>
+        e.State.ChooseNone();
+});
+
+<span class="token-comment">// 2. Create and execute the effect.</span>
+<span class="token-keyword">var</span> <span class="token-var">search</span> = <span class="token-keyword">new</span> <span class="token-type">SearchEffect</span>(
+    source:      mySource,
+    controller:  activePlayer,
+    library:     playerLibrary,
+    destination: playerHand,
+    filter:      _creatureFilter,     <span class="token-comment">// null = all cards eligible</span>
+    transferTag: _searchTag,          <span class="token-comment">// optional — tags the zone transfer</span>
+    shuffleAfterSearch: <span class="token-keyword">true</span>);       <span class="token-comment">// default: true</span>
+
+<span class="token-keyword">var</span> <span class="token-var">result</span> = search.Execute(context);
+<span class="token-comment">// result.Status == EffectStatus.Success  — card fetched</span>
+<span class="token-comment">// result.Status == EffectStatus.Partial  — searched but nothing chosen</span></code></pre>
+        </div>
+
+        <h3 id="search-state">SearchState</h3>
+        <p>The event carries a <code>SearchState</code> object:</p>
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Candidates</code></td><td>All cards in the library that passed the filter.</td></tr>
+            <tr><td><code>Library</code></td><td>The zone being searched.</td></tr>
+            <tr><td><code>SearchingPlayer</code></td><td>The player performing the search (who can see the cards).</td></tr>
+            <tr><td><code>Choose(card)</code></td><td>Select a card to fetch. Does not need to be in Candidates — the effect validates it is still in the library.</td></tr>
+            <tr><td><code>ChooseNone()</code></td><td>Intentionally find nothing (fail-to-find).</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong> If no subscriber commits a decision, <code>SearchEffect</code> defaults to <code>ChooseNone()</code>. The library is still shuffled. This prevents library-order information leaks even when a search fails.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="state-based-actions.html">← State-Based Actions</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="ai.html">AI Players →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#deck-definition">DeckDefinition</a>
+          <a href="#populate" class="toc-sub">Populating a library</a>
+          <a href="#mulligan-system">MulliganSystem</a>
+          <a href="#mulligan-setup" class="toc-sub">Setup</a>
+          <a href="#mulligan-state" class="toc-sub">MulliganState</a>
+          <a href="#mulligan-variants" class="toc-sub">Variants</a>
+          <a href="#search-effect">SearchEffect</a>
+          <a href="#search-state" class="toc-sub">SearchState</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

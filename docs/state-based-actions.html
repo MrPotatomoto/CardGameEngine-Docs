@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>State-Based Actions — Card Game Engine</title>
+  <meta name="description" content="Automatic game rules enforced before every priority grant: lethal damage, zero toughness, legend rule, token cleanup, and more." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html" class="active">State-Based Actions</a></li>
+            <li><a href="deck-management.html">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / State-Based Actions</div>
+          <h1>State-Based Actions</h1>
+          <p class="doc-lead">Automatic game rules checked continuously — creatures die from lethal damage, players are eliminated at 0 life, tokens vanish from zones where they shouldn't exist.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>State-based actions (SBAs) are rules the game enforces automatically without any player action. The classic examples: a creature with lethal damage is moved to the graveyard; a player at 0 or fewer life loses the game; a legend rule violation causes one copy to be destroyed.</p>
+        <p><code>StateBasedActionManager</code> holds a list of registered <code>IStateBasedAction</code> objects. The game state machine calls <code>CheckAndResolve()</code> before each priority grant. The manager scans all registered actions simultaneously, resolves all violations found in one pass, then repeats until no new violations appear or the safety cap is reached.</p>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong> SBA effects execute <em>directly</em> — they do not go on the stack. Players cannot respond to them. However, the zone transfers and stat changes they cause fire normal events, so triggered abilities still react normally.
+        </div>
+
+        <h2 id="built-in">Built-in SBAs</h2>
+        <p>All built-in SBAs are <code>ScriptableObject</code> assets created via <strong>Create → Card Game Engine → Rules → …</strong>.</p>
+
+        <div class="concept-grid">
+          <div class="concept-item">
+            <h4>LethalDamageSBA</h4>
+            <p>Moves creatures whose <em>toughness stat</em> has dropped to zero or below to a destination zone (typically the graveyard). Configure the stat to watch and the destination zone type in the Inspector.</p>
+          </div>
+          <div class="concept-item">
+            <h4>ZeroToughnessSBA</h4>
+            <p>Similar to LethalDamageSBA but watches for toughness equal to exactly zero, useful for games where toughness and damage are tracked separately (e.g. toughness as base value, damage as a separate stat).</p>
+          </div>
+          <div class="concept-item">
+            <h4>PlayerEliminationSBA</h4>
+            <p>Eliminates a player whose configured <code>PlayerStatDefinition</code> has reached the elimination threshold (typically 0 life or 10 poison counters).</p>
+          </div>
+          <div class="concept-item">
+            <h4>LegendaryRuleSBA</h4>
+            <p>Enforces the legend rule: if a player controls two or more legendary permanents with the same name, they must keep one and send the rest to the graveyard.</p>
+          </div>
+          <div class="concept-item">
+            <h4>TokenCleanupSBA</h4>
+            <p>Removes token cards from zones where tokens cannot legally exist (any zone other than the battlefield, or whichever zone type you configure). Tokens entering non-active zones are simply removed from the game.</p>
+          </div>
+          <div class="concept-item">
+            <h4>AttachmentFallOffSBA</h4>
+            <p>Detaches attachments whose host has left the active zone. See the <a href="attachments.html">Attachments</a> page for setup.</p>
+          </div>
+        </div>
+
+        <h2 id="setup">Setting up SBAs</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Registering SBAs at game start</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// All of these are ScriptableObject assets assigned in the Inspector</span>
+<span class="token-keyword">var</span> <span class="token-var">sba</span> = context.StateBasedActionManager;
+
+sba.Register(lethalDamageSBA);       <span class="token-comment">// creatures die at 0 toughness</span>
+sba.Register(playerEliminationSBA);  <span class="token-comment">// players die at 0 life</span>
+sba.Register(legendaryRuleSBA);      <span class="token-comment">// legend rule</span>
+sba.Register(tokenCleanupSBA);       <span class="token-comment">// tokens vanish outside active zones</span>
+sba.Register(attachmentFallOffSBA);  <span class="token-comment">// equipment detaches when host leaves</span></code></pre>
+        </div>
+
+        <h2 id="triggering">When SBAs run</h2>
+        <p>The game state machine calls <code>CheckAndResolve()</code> automatically before each priority grant. You can also call it manually after any game action that might create a new violation:</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Manual check after damage</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// After resolving combat damage, check for dead creatures immediately</span>
+<span class="token-keyword">int</span> passes = context.StateBasedActionManager.CheckAndResolve();
+Debug.Log(<span class="token-string">$"{passes} SBA pass(es) were needed."</span>);</code></pre>
+        </div>
+
+        <h2 id="custom-sba">Writing a custom SBA</h2>
+        <p>Implement <code>IStateBasedAction</code> and return an <code>SBAResult</code> when the violation is found, or <code>null</code> when the state is clean.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Custom SBA: discard to hand size</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">using</span> UnityEngine;
+<span class="token-keyword">using</span> CardGameEngine;
+
+[<span class="token-type">CreateAssetMenu</span>(menuName = <span class="token-string">"My Game/Hand Size SBA"</span>)]
+<span class="token-keyword">public class</span> <span class="token-type">HandSizeSBA</span> : <span class="token-type">ScriptableObject</span>, <span class="token-type">IStateBasedAction</span>
+{
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">ZoneDefinition</span> _handDef;
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">ZoneDefinition</span> _graveyardDef;
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-keyword">int</span> _maxHandSize = <span class="token-number">7</span>;
+
+    <span class="token-keyword">public</span> <span class="token-type">SBAResult</span> Check(<span class="token-type">GameContext</span> context)
+    {
+        <span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">zone</span> <span class="token-keyword">in</span> context.ZoneManager.GetAllZones())
+        {
+            <span class="token-keyword">if</span> (zone.Definition != _handDef) <span class="token-keyword">continue</span>;
+            <span class="token-keyword">if</span> (zone.Count &lt;= _maxHandSize) <span class="token-keyword">continue</span>;
+
+            <span class="token-comment">// Player needs to discard — return a violation</span>
+            <span class="token-keyword">var</span> <span class="token-var">graveyard</span> = context.ZoneManager.GetZone(_graveyardDef, zone.Owner);
+            <span class="token-keyword">if</span> (graveyard == <span class="token-keyword">null</span>) <span class="token-keyword">return null</span>;
+
+            <span class="token-keyword">var</span> <span class="token-var">source</span> = <span class="token-keyword">new</span> <span class="token-type">EffectSource</span>(Guid.NewGuid(), <span class="token-string">"Hand Size SBA"</span>);
+            <span class="token-keyword">var</span> <span class="token-var">effect</span> = <span class="token-keyword">new</span> <span class="token-type">MoveCardEffect</span>(source, zone.Owner, graveyard);
+            effect.Targets.Add(zone.Top); <span class="token-comment">// discard topmost card</span>
+
+            <span class="token-keyword">return new</span> <span class="token-type">SBAResult</span>(effect,
+                <span class="token-string">$"{zone.Owner.DisplayName} has {zone.Count} cards in hand (max {_maxHandSize})."</span>);
+        }
+        <span class="token-keyword">return null</span>;
+    }
+}</code></pre>
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="player-stats.html">← Player Stats</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="deck-management.html">Deck Management →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#built-in">Built-in SBAs</a>
+          <a href="#setup">Setting up</a>
+          <a href="#triggering">When SBAs run</a>
+          <a href="#custom-sba">Custom SBA</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

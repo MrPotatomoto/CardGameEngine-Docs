@@ -56,15 +56,36 @@
             <li><a href="zones.html">Zones</a></li>
             <li><a href="effects.html">Effects</a></li>
             <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html">State-Based Actions</a></li>
+            <li><a href="deck-management.html">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
           </ul>
         </div>
         <div class="nav-section">
           <span class="nav-section-label">Advanced</span>
           <ul>
             <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
             <li><a href="targeting.html">Targeting</a></li>
             <li><a href="tokens.html">Tokens</a></li>
             <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
           </ul>
         </div>
         <div class="nav-section">
@@ -273,15 +294,127 @@ creature.AddCounters(counters.plusOnePlusOne, <span class="token-number">3</span
 Debug.Log(<span class="token-string">$"{creature.Face.CardName} is now {power}/{toughness}"</span>);</code></pre>
         </div>
 
+        <!-- ── Tutorial 5: Combat ── -->
+        <h2 id="combat-tutorial">Tutorial 5: Running a Combat Step</h2>
+        <p>Add <code>CombatManager</code> to your setup (it lives on <code>GameContext</code>) and wire up the power and toughness stats. Then declare attackers, declare blockers, resolve damage, and run state-based actions to clean up dead creatures.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Full combat sequence</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// 1. Configure combat on the CombatManager (once during setup)</span>
+<span class="token-keyword">var</span> <span class="token-var">combat</span> = context.CombatManager;
+combat.PowerStat           = powerDef;
+combat.DamageStat          = toughnessDef;
+combat.CombatDamageType    = combatDamageType;
+
+<span class="token-comment">// 2. Declare attackers (goblin attacks player 2)</span>
+<span class="token-keyword">var</span> <span class="token-var">source</span> = <span class="token-keyword">new</span> <span class="token-type">EffectSource</span>(goblin);
+combat.TryDeclareAttacker(goblin, player2, source);
+
+<span class="token-comment">// 3. Declare blockers (no blocks this turn)</span>
+<span class="token-comment">// combat.TryDeclareBlocker(blocker, attacker, source);</span>
+
+<span class="token-comment">// 4. Resolve normal combat damage</span>
+combat.ResolveCombatDamage(source, isFirstStrike: <span class="token-keyword">false</span>);
+
+<span class="token-comment">// 5. Run state-based actions — removes creatures at 0 toughness</span>
+context.StateBasedActionManager.CheckAndResolve();
+
+<span class="token-comment">// 6. End combat (untaps and clears combat flags)</span>
+combat.EndCombat(source);</code></pre>
+        </div>
+
+        <p>The <code>LethalDamageSBA</code> and <code>ZeroToughnessSBA</code> handle creature death automatically when you call <code>CheckAndResolve()</code>. See <a href="combat.html">Combat</a> and <a href="state-based-actions.html">State-Based Actions</a> for the full configuration details.</p>
+
+        <!-- ── Tutorial 6: Deck + Mulligan ── -->
+        <h2 id="deck-tutorial">Tutorial 6: Loading a Deck with Mulligan</h2>
+        <p>Use <code>DeckDefinition</code> to describe the deck and <code>MulliganSystem</code> to handle the opening hand. The mulligan system fires a <code>MulliganOfferedEvent</code> which your UI or AI answers.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Deck load and opening-hand mulligan</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// deckDefinition is a DeckDefinition SO with your card list configured.</span>
+<span class="token-comment">// Populate fills the zone with card instances from the deck list.</span>
+deckDefinition.Populate(library, player1, player1, context);
+library.Shuffle();
+
+<span class="token-comment">// MulliganSystem handles drawing 7, offering mulligans, and redrawing.</span>
+<span class="token-keyword">var</span> <span class="token-var">mulligan</span> = <span class="token-keyword">new</span> <span class="token-type">MulliganSystem</span>(context);
+
+<span class="token-comment">// Subscribe before running — the handler fires once per player per offer.</span>
+context.EventBus.Subscribe&lt;<span class="token-type">MulliganOfferedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-comment">// Always keep for this tutorial. Set e.Decision to mulligan if needed.</span>
+    e.Decision = <span class="token-type">MulliganState</span>.Keep;
+});
+
+<span class="token-comment">// Draw opening hands and run the full mulligan sequence.</span>
+mulligan.RunOpeningHands(
+    <span class="token-keyword">new</span>[] { player1 }, context, libraryZone, handZone);</code></pre>
+        </div>
+
+        <!-- ── Tutorial 7: AI Opponent ── -->
+        <h2 id="ai-tutorial">Tutorial 7: Adding an AI Opponent</h2>
+        <p>Swap in an <code>AIPlayer</code> for the computer player's priority callback. The <code>RandomStrategy</code> picks a random legal action each turn — a great starting point before you write custom scoring logic.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Human vs AI priority loop</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Create the AI player — RandomStrategy acts whenever it can.</span>
+<span class="token-keyword">var</span> <span class="token-var">aiPlayer</span> = <span class="token-keyword">new</span> <span class="token-type">AIPlayer</span>(cpuPlayer, <span class="token-keyword">new</span> <span class="token-type">RandomStrategy</span>());
+
+<span class="token-comment">// Wire the state machine priority callback.</span>
+machine.OnPriorityWindowAsync = <span class="token-keyword">async</span> (player, tc, gc) =&gt;
+{
+    <span class="token-keyword">if</span> (player == cpuPlayer)
+        <span class="token-keyword">return await</span> aiPlayer.HandlePriorityAsync(player, tc, gc, destroyCancellationToken);
+
+    <span class="token-comment">// Human player — your UI awaits input here.</span>
+    <span class="token-keyword">return await</span> humanInput.WaitForDecisionAsync(player, tc, gc, destroyCancellationToken);
+};</code></pre>
+        </div>
+
+        <p>When you're ready for smarter decisions, implement <code>IActionScorer</code> and pass it to <code>ScoredStrategy</code>. See <a href="ai.html">AI Players</a> for the full strategy guide.</p>
+
+        <!-- ── Tutorial 8: Save & Load ── -->
+        <h2 id="save-tutorial">Tutorial 8: Save and Load Game State</h2>
+        <p>Capture the complete game state to JSON and restore it later — for save games, server sync, or undo. The <code>IGameAssetResolver</code> maps string IDs back to your ScriptableObject assets on load.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Save and restore</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// ── Saving ──────────────────────────────────────────────────────────</span>
+<span class="token-keyword">var</span> <span class="token-var">snapshot</span> = <span class="token-type">GameSerializer</span>.Capture(context, players);
+<span class="token-keyword">string</span> json    = <span class="token-type">GameSerializer</span>.ToJson(snapshot);
+File.WriteAllText(<span class="token-string">"save.json"</span>, json);
+
+<span class="token-comment">// ── Loading ──────────────────────────────────────────────────────────</span>
+<span class="token-keyword">string</span> json     = File.ReadAllText(<span class="token-string">"save.json"</span>);
+<span class="token-keyword">var</span> <span class="token-var">snapshot</span> = <span class="token-type">GameSerializer</span>.FromJson(json);
+
+<span class="token-type">IGameAssetResolver</span> resolver = <span class="token-keyword">new</span> <span class="token-type">MyAssetResolver</span>();
+<span class="token-type">GameSerializer</span>.Restore(snapshot, context, players, resolver);</code></pre>
+        </div>
+
+        <p>Always capture snapshots when the stack is empty (between priority windows) for fully restorable saves. See <a href="serialization.html">Serialization</a> for how to implement <code>IGameAssetResolver</code>.</p>
+
         <!-- ── Page Nav ── -->
         <nav class="page-nav">
           <div class="page-nav-prev">
             <span class="page-nav-label">Previous</span>
-            <a href="scry.html">← Scry</a>
+            <a href="getting-started.html">← Getting Started</a>
           </div>
           <div class="page-nav-next">
             <span class="page-nav-label">Next</span>
-            <a href="api-reference.html">API Reference →</a>
+            <a href="cards.html">Cards →</a>
           </div>
         </nav>
 
@@ -297,6 +430,10 @@ Debug.Log(<span class="token-string">$"{creature.Face.CardName} is now {power}/{
           <a href="#custom-spell">2: Custom Spell</a>
           <a href="#triggered-ability">3: Triggered Ability</a>
           <a href="#counter-buff">4: Counter Buff</a>
+          <a href="#combat-tutorial">5: Combat Step</a>
+          <a href="#deck-tutorial">6: Deck &amp; Mulligan</a>
+          <a href="#ai-tutorial">7: AI Opponent</a>
+          <a href="#save-tutorial">8: Save &amp; Load</a>
         </nav>
       </aside>
     </main>

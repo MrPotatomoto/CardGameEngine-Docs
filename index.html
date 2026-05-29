@@ -38,7 +38,7 @@
   <section class="hero">
     <div class="hero-grid-overlay"></div>
     <div class="hero-inner">
-      <div class="hero-badge">v1.0 — Now Available</div>
+      <div class="hero-badge">v3.0 — Now Available</div>
       <h1 class="hero-title">Build Card Games<br /><span class="hero-accent">Without the Boilerplate</span></h1>
       <p class="hero-subtitle">
         Card Game Engine is a composable, event-driven Unity package that gives you
@@ -151,6 +151,51 @@
           <a href="docs/scry.html" class="feature-link">Scry docs →</a>
         </div>
 
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/><path d="M10 9.5C10 8.67 9.33 8 8.5 8h-5C2.67 8 2 8.67 2 9.5S2.67 11 3.5 11h5c.83 0 1.5-.67 1.5-1.5z"/><path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/></svg>
+          </div>
+          <h3>Combat System</h3>
+          <p>Full declare-attackers / declare-blockers flow with first-strike, trample, and customizable can-attack / can-block filters.</p>
+          <a href="docs/combat.html" class="feature-link">Combat docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3>AI Players</h3>
+          <p>Plug-in strategy interface with three built-in strategies: PassAlways, Random, and Scored. Hook up an async inference call to go further.</p>
+          <a href="docs/ai.html" class="feature-link">AI docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <h3>Deck Management</h3>
+          <p>DeckDefinition populates zones from a card list. MulliganSystem runs configurable opening-hand logic with Vancouver or London rules out of the box.</p>
+          <a href="docs/deck-management.html" class="feature-link">Deck docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          </div>
+          <h3>Serialization &amp; Undo</h3>
+          <p>Capture complete game state to JSON and restore it. UndoableGameStateMachine pushes automatic checkpoints before every priority grant.</p>
+          <a href="docs/serialization.html" class="feature-link">Serialization docs →</a>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>Player Stats &amp; SBAs</h3>
+          <p>Track life totals, poison counters, and custom player resources. State-based actions automatically handle creature death, the legendary rule, and more.</p>
+          <a href="docs/player-stats.html" class="feature-link">Player Stats docs →</a>
+        </div>
+
       </div>
     </div>
   </section>
@@ -247,13 +292,13 @@
             <span class="install-card-label">UPM Git URL</span>
             <span class="install-card-badge">Recommended</span>
           </div>
-          <p class="install-card-desc">Add directly via Unity Package Manager. Locked to <code>v1.0.0</code> — update any time with one click.</p>
+          <p class="install-card-desc">Add directly via Unity Package Manager. Locked to <code>v3.0.0</code> — update any time with one click.</p>
           <div class="code-block">
             <div class="code-header">
               <span class="code-lang">Package Manager → Add from git URL</span>
               <button class="copy-btn" title="Copy"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
             </div>
-            <pre><code>https://github.com/MrPotatomoto/CardGameEngine-Dev.git?path=Packages/com.cardgameengine.core#v1.0.0</code></pre>
+            <pre><code>https://github.com/MrPotatomoto/CardGameEngine-Dev.git?path=Packages/com.cardgameengine.core#v3.0.0</code></pre>
           </div>
         </div>
 
@@ -267,7 +312,7 @@
           <p class="install-card-desc">Download the <code>.tgz</code> from GitHub Releases and add it via <em>Package Manager → Add package from tarball…</em> — no git required.</p>
           <a href="https://github.com/MrPotatomoto/CardGameEngine-Dev/releases/latest" class="btn btn-ghost install-download-btn" target="_blank" rel="noopener">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download v1.0.0
+            Download v3.0.0
           </a>
         </div>
 

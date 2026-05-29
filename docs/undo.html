@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Undo &amp; Checkpoints — Card Game Engine</title>
+  <meta name="description" content="Roll back game state one action at a time with CheckpointManager and UndoableGameStateMachine." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html">State-Based Actions</a></li>
+            <li><a href="deck-management.html">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html" class="active">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Undo &amp; Checkpoints</div>
+          <h1>Undo &amp; Checkpoints</h1>
+          <p class="doc-lead">Roll game state back one action at a time with <code>CheckpointManager</code> and <code>UndoableGameStateMachine</code>. Give players a safety net without writing any snapshot code yourself.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The undo system is built on top of <a href="serialization.html">Serialization</a>. <code>CheckpointManager</code> maintains a rolling stack of <code>GameSnapshot</code> objects in memory. <code>UndoableGameStateMachine</code> is a drop-in subclass of <code>GameStateMachine</code> that automatically pushes a checkpoint before every priority grant — so every player action is automatically revertible.</p>
+
+        <p>What each checkpoint captures:</p>
+        <ul>
+          <li>Zone contents and per-card state (face, tapped, stats, counters, flags) via <code>GameSerializer.Capture</code>.</li>
+          <li>Resource pool amounts for all players.</li>
+          <li>Turn number, active player index, and timestamp.</li>
+          <li>Player stat values (life totals, poison counters, etc.) — restored directly without firing events.</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Known limitations:</strong> Registered <code>ContinuousEffect</code>s, <code>IReplacementEffect</code>s, and triggered-ability registrations are <em>not</em> snapshotted. Effects granted by cards in play are re-established when those cards re-enter active zones, but globally-registered effects must be re-registered by your code after a restore. Also: the stack is not restored — capture checkpoints only when the stack is empty.
+        </div>
+
+        <h2 id="automatic-undo">Automatic undo with UndoableGameStateMachine</h2>
+        <p>The quickest path to undo: swap <code>GameStateMachine</code> for <code>UndoableGameStateMachine</code> in your bootstrapper. The subclass overrides <code>OnBeforePriorityGrant</code> to call <code>PushCheckpoint()</code> automatically — no changes to your priority callbacks required.</p>
+
+        <h3>Step 1 — Override CreateStateMachine</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — GameBootstrapper subclass</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">public class</span> <span class="token-type">MyBootstrapper</span> : <span class="token-type">GameBootstrapper</span>
+{
+    <span class="token-keyword">private</span> <span class="token-type">MyAssetResolver</span> _resolver = <span class="token-keyword">new</span> <span class="token-type">MyAssetResolver</span>();
+
+    <span class="token-comment">// 1. Return the undoable subclass instead of the base class.</span>
+    <span class="token-keyword">protected override</span> <span class="token-type">GameStateMachine</span> CreateStateMachine(
+        <span class="token-type">TurnStructureDefinition</span> ts,
+        IReadOnlyList&lt;<span class="token-type">Player</span>&gt; players,
+        <span class="token-type">GameContext</span> ctx)
+    {
+        <span class="token-keyword">return new</span> <span class="token-type">UndoableGameStateMachine</span>(
+            ts, players, ctx, ctx.CheckpointManager);
+    }
+
+    <span class="token-comment">// 2. Provide the resolver so RestoreSnapshot can rebuild SO assets.</span>
+    <span class="token-keyword">protected override</span> <span class="token-type">IGameAssetResolver</span> GetAssetResolver()
+        =&gt; _resolver;
+}</code></pre>
+        </div>
+
+        <h3>Step 2 — Wire up an Undo button</h3>
+        <p>Call <code>UndoLastAction()</code> from any UI component. It internally calls <code>CheckpointManager.PopCheckpoint(resolver)</code> using the resolver returned by <code>GetAssetResolver()</code>.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — UI button handler</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// e.g. on a Unity UI Button's onClick event:</span>
+<span class="token-keyword">public void</span> OnUndoButtonClicked()
+{
+    <span class="token-keyword">bool</span> undone = bootstrapper.UndoLastAction();
+    undoButton.interactable = bootstrapper.Context.CheckpointManager.HasCheckpoints;
+}</code></pre>
+        </div>
+
+        <h2 id="checkpoint-manager">CheckpointManager API</h2>
+        <p>Accessed via <code>context.CheckpointManager</code>. You rarely need to call it directly when using <code>UndoableGameStateMachine</code>, but it's available for manual control.</p>
+
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>MaxDepth</code></td><td>Maximum number of checkpoints to retain. Oldest are discarded when the limit is exceeded. Default: <code>10</code>. Must be ≥ 1.</td></tr>
+            <tr><td><code>Count</code></td><td>Number of checkpoints currently held.</td></tr>
+            <tr><td><code>HasCheckpoints</code></td><td><code>true</code> when at least one checkpoint is available.</td></tr>
+            <tr><td><code>PushCheckpoint()</code></td><td>Captures current state and pushes it onto the stack. Discards the oldest if <code>MaxDepth</code> is exceeded.</td></tr>
+            <tr><td><code>PopCheckpoint(resolver)</code></td><td>Restores the most recent checkpoint and removes it from the stack. Returns <code>false</code> if the stack is empty or <code>resolver</code> is null.</td></tr>
+            <tr><td><code>PeekSnapshot()</code></td><td>Returns the most recent <code>GameSnapshot</code> without restoring or removing it. Returns <code>null</code> if empty.</td></tr>
+            <tr><td><code>DiscardTop()</code></td><td>Removes the most recent checkpoint without restoring it.</td></tr>
+            <tr><td><code>Clear()</code></td><td>Discards all stored checkpoints.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="manual-checkpoints">Manual checkpoints</h2>
+        <p>You can push and pop checkpoints manually — for example, to create a save-before-complex-action pattern that doesn't depend on the priority loop. This is useful for non-interactive steps like AI combos, or for targeting a specific rewind point deeper than one action.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Manual checkpoint example</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">checkpoints</span> = context.CheckpointManager;
+
+<span class="token-comment">// Save before a complex sequence.</span>
+checkpoints.PushCheckpoint();
+
+<span class="token-comment">// ... perform several effects ...</span>
+
+<span class="token-comment">// Something went wrong — roll back.</span>
+checkpoints.PopCheckpoint(myResolver);
+
+<span class="token-comment">// Change undo depth to allow 20 levels.</span>
+checkpoints.MaxDepth = <span class="token-number">20</span>;</code></pre>
+        </div>
+
+        <h2 id="depth-and-memory">Undo depth and memory</h2>
+        <p>Each checkpoint is a complete in-memory copy of zone contents and player stats. Memory usage scales with the number of zones, cards, and players. For most games, the default depth of 10 is reasonable. If memory is a concern, reduce <code>MaxDepth</code> before the game loop starts:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Single-level undo: only keep the immediately previous state.</span>
+context.CheckpointManager.MaxDepth = <span class="token-number">1</span>;</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> Disable undo for AI turns to avoid accumulating snapshots the player can never trigger. Call <code>checkpoints.DiscardTop()</code> immediately after the AI's priority window closes, or skip pushing altogether by checking whether the active player is human before calling <code>PushCheckpoint</code>.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="serialization.html">← Serialization</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="ability-editor.html">Ability Editor →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#automatic-undo">Automatic undo</a>
+          <a href="#checkpoint-manager">CheckpointManager API</a>
+          <a href="#manual-checkpoints">Manual checkpoints</a>
+          <a href="#depth-and-memory">Depth &amp; memory</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tokens — Card Game Engine</title>
-  <meta name="description" content="TokenDefinition, CreateTokenEffect, and the full token lifecycle." />
+  <title>Attachments — Card Game Engine</title>
+  <meta name="description" content="Equipment, auras, and other card-to-card attachments using AttachmentManager, AttachEffect, and DetachEffect." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -63,7 +63,7 @@
           <span class="nav-section-label">Game Systems</span>
           <ul>
             <li><a href="combat.html">Combat</a></li>
-            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="attachments.html" class="active">Attachments</a></li>
             <li><a href="player-stats.html">Player Stats</a></li>
             <li><a href="state-based-actions.html">State-Based Actions</a></li>
             <li><a href="deck-management.html">Deck Management</a></li>
@@ -76,7 +76,7 @@
             <li><a href="continuous-effects.html">Continuous Effects</a></li>
             <li><a href="replacement-effects.html">Replacement Effects</a></li>
             <li><a href="targeting.html">Targeting</a></li>
-            <li><a href="tokens.html" class="active">Tokens</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
             <li><a href="scry.html">Scry</a></li>
           </ul>
         </div>
@@ -101,111 +101,121 @@
       <article class="doc-content">
 
         <div class="doc-header">
-          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Tokens</div>
-          <h1>Tokens</h1>
-          <p class="doc-lead">Create, track, and clean up token cards — from Soldier tokens to complex creature tokens.</p>
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Attachments</div>
+          <h1>Attachments</h1>
+          <p class="doc-lead">Model equipment, auras, and any card-to-card bond with <code>AttachmentManager</code>, <code>AttachEffect</code>, and <code>DetachEffect</code>.</p>
         </div>
 
         <h2 id="overview">Overview</h2>
-        <p>Tokens are cards that are created during gameplay rather than drawn from a deck. They are backed by a <code>TokenDefinition</code> (a subclass of <code>CardTemplate</code>) and are indistinguishable from regular cards at the <code>CardInstance</code> level — except that <code>card.IsToken</code> returns <code>true</code>.</p>
+        <p>An <em>attachment</em> is a card that is logically bonded to a <em>host</em> card. Equipment, auras, fortifications — anything where card A modifies card B while both are in play — uses this system.</p>
+        <p><code>AttachmentManager</code> lives at <code>context.AttachmentManager</code>. It keeps two dictionaries: one mapping each attachment to its current host, and one mapping each host to the list of cards attached to it.</p>
+        <p>You never call <code>AttachmentManager</code> directly from game code. Instead, use the provided effects:</p>
+        <ul>
+          <li><code>AttachEffect</code> — attach one card to another.</li>
+          <li><code>DetachEffect</code> — remove an attachment from its host.</li>
+        </ul>
 
-        <!-- ── TokenDefinition ── -->
-        <h2 id="token-definition">TokenDefinition</h2>
-        <p>Create via <strong>Right-click → Create → Card Game Engine → Token Definition</strong>. A <code>TokenDefinition</code> is a <code>CardTemplate</code> subclass — it carries the same face data (name, types, stats), but is tagged so the engine knows it's a token.</p>
-
-        <div class="callout callout-note">
-          <strong>No deck needed:</strong> Tokens are not part of any player's deck. <code>TokenDefinition</code> assets live in your project as normal ScriptableObjects — reference them in Inspector fields on cards or abilities that create them.
-        </div>
-
-        <!-- ── CreateTokenEffect ── -->
-        <h2 id="create-token-effect">CreateTokenEffect</h2>
-        <p>The built-in effect for creating tokens. It handles all the bookkeeping: instantiating <code>CardInstance</code> objects, setting owner/controller, placing them in the destination zone, and firing the appropriate events.</p>
-
+        <h2 id="attaching">Attaching a card</h2>
         <div class="code-block">
           <div class="code-header">
-            <span class="code-lang">C# — Create three Soldier tokens</span>
+            <span class="code-lang">C# — Equipping a sword to a creature</span>
             <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
           </div>
-          <pre><code><span class="token-keyword">var</span> <span class="token-var">effect</span> = <span class="token-keyword">new</span> <span class="token-type">CreateTokenEffect</span>(
-    source:      effectSource,
-    controller:  castingPlayer,   <span class="token-comment">// becomes owner AND controller of the tokens</span>
-    tokenDef:    soldierTokenDef,
-    destination: battlefield,
-    count:       <span class="token-number">3</span>
-);
-
-<span class="token-type">EffectResult</span> result = effect.Execute(context);
-<span class="token-comment">// result.Status == EffectStatus.Success
-// battlefield.Count == 3
-// Each token: IsToken = true, Owner = castingPlayer, Controller = castingPlayer</span></code></pre>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">source</span> = <span class="token-keyword">new</span> <span class="token-type">EffectSource</span>(swordCard);
+<span class="token-keyword">var</span> <span class="token-var">attach</span> = <span class="token-keyword">new</span> <span class="token-type">AttachEffect</span>(source, controller, attachment: swordCard, host: goblinCard);
+attach.Execute(context);
+<span class="token-comment">// Fires CardAttachedEvent(source, swordCard, goblinCard)</span></code></pre>
         </div>
 
-        <h3 id="events-fired">Events Fired</h3>
-        <p>For each token created, <code>CreateTokenEffect</code> fires:</p>
-        <ol>
-          <li><code>TokenCreatedEvent</code> — carries the newly created token instance.</li>
-          <li><code>CardEnteredZoneEvent</code> — fired by <code>ZoneManager.Transfer()</code> as the token enters the destination zone.</li>
-        </ol>
+        <p>If the sword is already equipped to a different creature, <code>AttachEffect</code> automatically detaches it from the previous host first — the standard re-equip behaviour.</p>
 
+        <h2 id="detaching">Detaching</h2>
         <div class="code-block">
           <div class="code-header">
-            <span class="code-lang">C# — Listening to token creation</span>
+            <span class="code-lang">C# — Detaching</span>
             <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
           </div>
-          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">TokenCreatedEvent</span>&gt;(e =&gt;
-{
-    Debug.Log(<span class="token-string">$"Token created: {e.Token.Face.CardName} controlled by {e.Token.Controller.DisplayName}"</span>);
-    <span class="token-comment">// Spawn a visual GameObject for the token here</span>
-});</code></pre>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">detach</span> = <span class="token-keyword">new</span> <span class="token-type">DetachEffect</span>(source, controller, swordCard);
+detach.Execute(context);
+<span class="token-comment">// Fires CardDetachedEvent(source, swordCard, previousHost)</span></code></pre>
         </div>
 
-        <!-- ── IsToken ── -->
-        <h2 id="is-token">Identifying Tokens</h2>
-        <p>Use <code>card.IsToken</code> at any time to check whether a <code>CardInstance</code> is a token. This returns <code>true</code> if and only if the card's template is a <code>TokenDefinition</code>.</p>
-
+        <h2 id="querying">Querying attachment state</h2>
         <div class="code-block">
           <div class="code-header">
             <span class="code-lang">C#</span>
             <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
           </div>
-          <pre><code><span class="token-comment">// Count non-token creatures on the battlefield</span>
-<span class="token-keyword">int</span> realCreatures = battlefield.Cards
-    .Count(c =&gt; c.IsType(creatureType) &amp;&amp; !c.IsToken);</code></pre>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">mgr</span> = context.AttachmentManager;
+
+<span class="token-comment">// Is this card equipped to something?</span>
+<span class="token-keyword">bool</span> equipped = mgr.IsAttached(swordCard);
+
+<span class="token-comment">// What is it attached to?</span>
+<span class="token-type">CardInstance</span> host = mgr.GetHost(swordCard);
+
+<span class="token-comment">// What is attached to this creature?</span>
+<span class="token-type">IReadOnlyList</span>&lt;<span class="token-type">CardInstance</span>&gt; gear = mgr.GetAttachments(goblinCard);</code></pre>
         </div>
 
-        <!-- ── Token Cleanup ── -->
-        <h2 id="token-cleanup">Token Cleanup</h2>
-        <p>Tokens that leave the battlefield are automatically removed — they cease to exist in any zone. This is handled by subscribing to <code>CardLeftZoneEvent</code> and removing the token from its destination zone if the destination is not the battlefield.</p>
-
-        <div class="callout callout-warning">
-          <strong>Tokens in graveyard:</strong> By default, when a token would go to a zone that isn't the battlefield (e.g., a graveyard or exile), it blinks out of existence instead. Implement this as a replacement effect or as a <code>CardLeftZoneEvent</code> handler — the engine does not enforce this rule automatically, giving you control over your game's specific token rules.
-        </div>
+        <h2 id="fall-off">Attachment fall-off</h2>
+        <p><code>AttachmentManager</code> does not automatically detach cards when a host moves zones — that is a game-rule concern, not a core mechanism. The engine ships a ready-made state-based action to handle it:</p>
 
         <div class="code-block">
           <div class="code-header">
-            <span class="code-lang">C# — Auto-remove tokens on death</span>
+            <span class="code-lang">C# — Registering the fall-off SBA</span>
             <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
           </div>
-          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">CardEnteredZoneEvent</span>&gt;(e =&gt;
+          <pre><code><span class="token-comment">// attachmentFallOffSBA is a pre-configured AttachmentFallOffSBA ScriptableObject.
+// It checks whether a host is still in an "active" zone (AbilitiesActive = true).
+// If the host has left, it strips all attachments.</span>
+
+context.StateBasedActionManager.Register(attachmentFallOffSBA);</code></pre>
+        </div>
+
+        <p>Create the SBA asset via <strong>Create → Card Game Engine → Rules → Attachment Fall-Off SBA</strong> and set its <em>Active Zone Type</em> to your battlefield zone type. Then register it once at game start. The <code>StateBasedActionManager</code> will call <code>CheckAndResolve()</code> automatically before each priority grant.</p>
+
+        <h2 id="stat-bonuses">Granting stat bonuses</h2>
+        <p>Attachments grant bonuses through the <a href="continuous-effects.html">continuous effect</a> system, not through the attachment relationship directly. When a card is attached, subscribe to <code>CardAttachedEvent</code> and apply a <code>StatModifier</code> continuous effect sourced from the attachment. When it is detached, apply an expiry to that effect.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Pattern: equipment grants +2 Power</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">CardAttachedEvent</span>&gt;(e =&gt;
 {
-    <span class="token-comment">// If a token just entered any zone other than battlefield, remove it</span>
-    <span class="token-keyword">if</span> (e.Card.IsToken &amp;&amp; e.Zone != battlefield)
-    {
-        e.Zone.TryRemove(e.Card);
-        Debug.Log(<span class="token-string">$"Token {e.Card.Face.CardName} ceased to exist."</span>);
-    }
+    <span class="token-keyword">if</span> (e.Attachment != swordCard) <span class="token-keyword">return</span>;
+
+    <span class="token-keyword">var</span> <span class="token-var">modifier</span> = <span class="token-keyword">new</span> <span class="token-type">StatModifier</span>(powerDef, <span class="token-number">2</span>, e.Source,
+        expiresWhen: <span class="token-type">ExpiryReason</span>.SourceLeavesBattlefield);
+    context.ContinuousEffectManager.Apply(modifier, e.Host);
+});
+
+context.EventBus.Subscribe&lt;<span class="token-type">CardDetachedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-keyword">if</span> (e.Attachment != swordCard) <span class="token-keyword">return</span>;
+    context.ContinuousEffectManager.ExpireFromSource(swordCard);
 });</code></pre>
         </div>
 
-        <!-- ── Page Nav ── -->
+        <h2 id="events">Events</h2>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>When</th><th>Key fields</th></tr></thead>
+          <tbody>
+            <tr><td><code>CardAttachedEvent</code></td><td>Successful attachment.</td><td><code>Attachment</code>, <code>Host</code></td></tr>
+            <tr><td><code>CardDetachedEvent</code></td><td>Successful detachment.</td><td><code>Attachment</code>, <code>PreviousHost</code></td></tr>
+          </tbody>
+        </table>
+
         <nav class="page-nav">
           <div class="page-nav-prev">
             <span class="page-nav-label">Previous</span>
-            <a href="targeting.html">← Targeting</a>
+            <a href="combat.html">← Combat</a>
           </div>
           <div class="page-nav-next">
             <span class="page-nav-label">Next</span>
-            <a href="scry.html">Scry →</a>
+            <a href="player-stats.html">Player Stats →</a>
           </div>
         </nav>
 
@@ -215,11 +225,12 @@
         <p class="toc-title">On this page</p>
         <nav class="toc-nav">
           <a href="#overview">Overview</a>
-          <a href="#token-definition">TokenDefinition</a>
-          <a href="#create-token-effect">CreateTokenEffect</a>
-          <a href="#events-fired" class="toc-sub">Events Fired</a>
-          <a href="#is-token">Identifying Tokens</a>
-          <a href="#token-cleanup">Token Cleanup</a>
+          <a href="#attaching">Attaching a card</a>
+          <a href="#detaching">Detaching</a>
+          <a href="#querying">Querying state</a>
+          <a href="#fall-off">Attachment fall-off</a>
+          <a href="#stat-bonuses">Granting stat bonuses</a>
+          <a href="#events">Events</a>
         </nav>
       </aside>
     </main>
