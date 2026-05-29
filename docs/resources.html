@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resources — Card Game Engine</title>
+  <meta name="description" content="ResourceType, ResourceSubtype, ResourcePool, ResourceManager, reservations, and the ResourceChangedEvent." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="stack.html">Stack &amp; Priority</a></li>
+            <li><a href="resources.html" class="active">Resources</a></li>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html">State-Based Actions</a></li>
+            <li><a href="deck-management.html">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Resources</div>
+          <h1>Resources</h1>
+          <p class="doc-lead">A flexible, type-safe resource system for mana, gold, energy, or any game currency — with subtype pools, reservations for deferred cost payment, and a unified change event.</p>
+        </div>
+
+        <!-- ── Overview ── -->
+        <h2 id="overview">Overview</h2>
+        <p>The resource system is built around three ScriptableObjects and two runtime classes:</p>
+        <ul>
+          <li><strong>ResourceType</strong> — defines a currency: name, pool behaviour, and optional subtypes.</li>
+          <li><strong>ResourceSubtype</strong> — a colored or labeled variant (e.g. Red mana, Blue mana).</li>
+          <li><strong>ResourcePool</strong> — the live per-player pool for one <code>ResourceType</code>.</li>
+          <li><strong>ResourceManager</strong> — the single point of access; all mutations go through it so events fire and reservations are respected.</li>
+          <li><strong>ReservationToken</strong> — a lock placed on resources that are committed to a stack entry awaiting resolution.</li>
+        </ul>
+
+        <!-- ── ResourceType ── -->
+        <h2 id="resource-type">ResourceType</h2>
+        <p>Create via <strong>Create → Card Game Engine → Resources → Resource Type</strong>. Each <code>ResourceType</code> asset describes one currency and governs how its pool behaves.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Property</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>ResourceName</code></td><td>Display name, e.g. <em>"Mana"</em>, <em>"Gold"</em>, <em>"Energy"</em>.</td></tr>
+              <tr><td><code>Abbreviation</code></td><td>Short label for UI, e.g. <em>"G"</em> or <em>"⚡"</em>.</td></tr>
+              <tr><td><code>Color</code> / <code>Icon</code></td><td>Visual presentation in UI.</td></tr>
+              <tr><td><code>StartingAmount</code></td><td>How much each player's pool begins with when initialized.</td></tr>
+              <tr><td><code>HasMaximum</code> / <code>Maximum</code></td><td>When enabled, <code>Add</code> and <code>Set</code> are clamped to this ceiling.</td></tr>
+              <tr><td><code>PersistsBetweenTurns</code></td><td>If <code>false</code>, the pool resets to zero at the start of the owner's turn. Set <code>true</code> for persistent resources like gold.</td></tr>
+              <tr><td><code>Subtypes</code></td><td>Optional <code>ResourceSubtype[]</code> — leave empty for generic resources.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── ResourceSubtype ── -->
+        <h2 id="resource-subtype">ResourceSubtype</h2>
+        <p>Create via <strong>Create → Card Game Engine → Resources → Resource Subtype</strong>. Subtypes let a single <code>ResourceType</code> hold separate named buckets — for example a <em>Mana</em> type could have <em>Red</em>, <em>Blue</em>, <em>Green</em> subtypes.</p>
+
+        <p>All mutations on a pool accept an optional <code>subtype</code> parameter. Passing <code>null</code> targets the untyped (generic) bucket. A pool's <code>Total</code> property sums all typed buckets plus the untyped bucket.</p>
+
+        <div class="callout callout-note">
+          <strong>Simple games:</strong> If your game has a single generic resource (gold, energy, action points) you don't need subtypes at all. Just leave the <code>Subtypes</code> array empty and omit the optional parameter on all <code>ResourceManager</code> calls.
+        </div>
+
+        <!-- ── ResourceManager ── -->
+        <h2 id="resource-manager">ResourceManager</h2>
+        <p>Access via <code>context.ResourceManager</code>. All reads and writes go through here — never mutate <code>ResourcePool</code> directly.</p>
+
+        <h3 id="pool-setup">Pool setup</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Initializing a player's mana pool</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Called once per player at game start (e.g. in SetupPlayerResources).</span>
+context.ResourceManager.GetOrCreatePool(player, manaType);
+
+<span class="token-comment">// Give the player 5 generic mana to start.</span>
+context.ResourceManager.Add(player, manaType, <span class="token-number">5</span>);
+
+<span class="token-comment">// Or add 3 Red mana specifically.</span>
+context.ResourceManager.Add(player, manaType, <span class="token-number">3</span>, redSubtype);</code></pre>
+        </div>
+
+        <h3 id="mutations">Mutations</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Method</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Add(player, type, amount, subtype?)</code></td><td>Increases the pool. Clamped to <code>Maximum</code> if set. Fires <code>ResourceChangedEvent</code>.</td></tr>
+              <tr><td><code>TrySpend(player, type, amount, subtype?)</code></td><td>Deducts the amount. Returns <code>false</code> (no change) if the available amount (after reservations) is insufficient.</td></tr>
+              <tr><td><code>Set(player, type, amount, subtype?)</code></td><td>Sets the pool to an exact value. Clamped to [0, Maximum]. Fires <code>ResourceChangedEvent</code> only if the value changes.</td></tr>
+              <tr><td><code>OnTurnStart(player)</code></td><td>Resets all non-persistent pools for this player to zero. Call at the start of the player's turn before granting new resources.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="queries">Queries</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Method</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>GetAmount(player, type, subtype?)</code></td><td>Total amount in the pool — includes reserved amounts.</td></tr>
+              <tr><td><code>GetAvailableAmount(player, type, subtype?)</code></td><td>Amount available to spend right now — total minus active reservations.</td></tr>
+              <tr><td><code>GetOrCreatePool(player, type)</code></td><td>Returns (or creates) the <code>ResourcePool</code> for this player/type pair.</td></tr>
+              <tr><td><code>GetPool(player, type)</code></td><td>Returns the pool, or <code>null</code> if not yet created.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Turn reset example ── -->
+        <h3 id="turn-reset">Turn-start resource grant</h3>
+        <p>The most common pattern is to reset non-persistent resources then grant new ones at the start of each turn. Wire this up in your <code>GameBootstrapper</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Auto-action on the Draw phase</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Subscribe to TurnStartedEvent and reset+refill the active player's mana.</span>
+context.EventBus.Subscribe&lt;<span class="token-type">TurnStartedEvent</span>&gt;(e =&gt;
+{
+    context.ResourceManager.OnTurnStart(e.ActivePlayer);
+    context.ResourceManager.Add(e.ActivePlayer, manaType, <span class="token-number">10</span>); <span class="token-comment">// grant 10 mana</span>
+});</code></pre>
+        </div>
+
+        <!-- ── Reservations ── -->
+        <h2 id="reservations">Reservations</h2>
+        <p>When a spell uses <code>OnResolution</code> cost payment, resources need to be locked at declaration time so the player cannot spend them on something else before the spell resolves. The reservation system handles this transparently.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Method</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>TryReserve(player, type, amount, subtype?)</code></td><td>Locks the specified amount. Returns a <code>ReservationToken</code> on success, or <code>null</code> if funds are insufficient. The reserved amount is excluded from <code>GetAvailableAmount</code>.</td></tr>
+              <tr><td><code>CommitReservation(token)</code></td><td>Deducts the reserved amount from the pool and invalidates the token. Called by <code>GameStateMachine</code> when the stack entry resolves.</td></tr>
+              <tr><td><code>ReleaseReservation(token)</code></td><td>Frees the lock without spending. Called when the stack entry fizzles or is countered.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>You rarely need to call these directly — <code>PendingAction.TryCommit()</code> reserves resources automatically for <code>OnResolution</code> entries and attaches the tokens to the <code>StackEntry</code>. <code>GameStateMachine</code> commits or releases them during resolution.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Manual reservation (advanced)</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Lock 3 mana while a spell is on the stack.</span>
+<span class="token-type">ReservationToken</span> token = context.ResourceManager.TryReserve(player, manaType, <span class="token-number">3</span>);
+<span class="token-keyword">if</span> (token == <span class="token-keyword">null</span>)
+{
+    <span class="token-comment">// Insufficient funds — abort.</span>
+    <span class="token-keyword">return</span>;
+}
+
+<span class="token-comment">// Later: spell resolves.</span>
+context.ResourceManager.CommitReservation(token);
+
+<span class="token-comment">// Or: spell fizzles / is countered.</span>
+context.ResourceManager.ReleaseReservation(token);</code></pre>
+        </div>
+
+        <!-- ── ResourceChangedEvent ── -->
+        <h2 id="event">ResourceChangedEvent</h2>
+        <p>Fires after every <code>Add</code>, <code>TrySpend</code>, <code>Set</code>, and reservation commit/release that changes a pool's actual value. Subscribe to update resource displays:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Updating a resource UI bar</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">ResourceChangedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-keyword">if</span> (e.Player != localPlayer || e.ResourceType != manaType) <span class="token-keyword">return</span>;
+
+    manaBar.SetValue(e.NewAmount);
+    manaLabel.text = <span class="token-string">$"{e.NewAmount} {manaType.ResourceName}"</span>;
+
+    <span class="token-comment">// e.OldAmount, e.Delta, e.Operation (Add / Remove / Set) also available</span>
+});</code></pre>
+        </div>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Property</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Player</code></td><td>The player whose pool changed.</td></tr>
+              <tr><td><code>ResourceType</code></td><td>Which resource type was affected.</td></tr>
+              <tr><td><code>Subtype</code></td><td>The subtype bucket, or <code>null</code> for the untyped bucket.</td></tr>
+              <tr><td><code>OldAmount</code> / <code>NewAmount</code></td><td>Pool values before and after the change.</td></tr>
+              <tr><td><code>Delta</code></td><td>Shorthand for <code>NewAmount - OldAmount</code>.</td></tr>
+              <tr><td><code>Operation</code></td><td><code>ResourceOperation.Add</code>, <code>Remove</code>, or <code>Set</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="stack.html">← Stack &amp; Priority</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="combat.html">Combat →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#resource-type">ResourceType</a>
+          <a href="#resource-subtype">ResourceSubtype</a>
+          <a href="#resource-manager">ResourceManager</a>
+          <a href="#pool-setup" class="toc-sub">Pool setup</a>
+          <a href="#mutations" class="toc-sub">Mutations</a>
+          <a href="#queries" class="toc-sub">Queries</a>
+          <a href="#turn-reset" class="toc-sub">Turn-start grant</a>
+          <a href="#reservations">Reservations</a>
+          <a href="#event">ResourceChangedEvent</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

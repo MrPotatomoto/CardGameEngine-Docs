@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stack &amp; Priority — Card Game Engine</title>
+  <meta name="description" content="The APNAP priority system, StackEntry lifecycle, PendingAction, cost-payment timing, and all stack events." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="stack.html" class="active">Stack &amp; Priority</a></li>
+            <li><a href="resources.html">Resources</a></li>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html">State-Based Actions</a></li>
+            <li><a href="deck-management.html">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Stack &amp; Priority</div>
+          <h1>Stack &amp; Priority</h1>
+          <p class="doc-lead">Full APNAP priority, stack resolution with deferred cost payment, trigger draining, and state-based action loops — all driven by <code>GameStateMachine</code>.</p>
+        </div>
+
+        <!-- ── Overview ── -->
+        <h2 id="overview">Overview</h2>
+        <p>The stack is a LIFO (last-in, first-out) zone that holds spells and abilities waiting to resolve. The engine implements the <strong>Active-Player, Non-Active-Player (APNAP)</strong> priority algorithm: the active player always receives priority first, then each other player in turn order. When every player passes priority consecutively the top entry resolves, and the round restarts from the active player.</p>
+
+        <p>The system is split across four collaborating types:</p>
+        <ul>
+          <li><strong>StackZone</strong> — the LIFO container.</li>
+          <li><strong>StackEntry</strong> — one spell or ability on the stack.</li>
+          <li><strong>PendingAction</strong> — the staging area while the player is still selecting targets and paying costs.</li>
+          <li><strong>GameStateMachine</strong> — runs the APNAP loop, resolves entries, drains triggers, and runs SBAs.</li>
+        </ul>
+
+        <!-- ── StackZone ── -->
+        <h2 id="stack-zone">StackZone</h2>
+        <p>The stack zone is created by <code>ZoneManager</code> when a <code>ZoneDefinition</code> with <code>IsStack = true</code> is registered. Access it from any system via <code>context.ZoneManager.StackZone</code>.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Member</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Push(entry)</code></td><td>Places a new entry on top. Called by <code>PlayCardSystem</code> and <code>ActivateAbilitySystem</code> after <code>PendingAction.TryCommit()</code>.</td></tr>
+              <tr><td><code>Pop()</code></td><td>Removes and returns the top entry. Called by <code>GameStateMachine</code> during resolution.</td></tr>
+              <tr><td><code>Peek()</code></td><td>Returns the top entry without removing it. Returns <code>null</code> if empty.</td></tr>
+              <tr><td><code>Remove(entry)</code></td><td>Removes a specific entry from anywhere in the stack (e.g., counterspell effects).</td></tr>
+              <tr><td><code>Entries</code></td><td>Read-only ordered list; index 0 is the top.</td></tr>
+              <tr><td><code>Count</code> / <code>IsEmpty</code></td><td>Stack size checks.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── StackEntry ── -->
+        <h2 id="stack-entry">StackEntry</h2>
+        <p>An immutable record of a spell or ability waiting to resolve. <code>StackEntry</code> implements <code>ITargetable</code>, so counter-spells and copy effects can target it directly via the targeting system.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Property</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>EntryType</code></td><td><code>StackEntryType</code> — <code>Spell</code>, <code>ActivatedAbility</code>, or <code>TriggeredAbility</code>.</td></tr>
+              <tr><td><code>Effect</code></td><td>The <code>IEffect</code> instance that will execute on resolution.</td></tr>
+              <tr><td><code>Controller</code></td><td>The player who controls this entry.</td></tr>
+              <tr><td><code>Owner</code></td><td>The player who owns the source card (may differ from controller).</td></tr>
+              <tr><td><code>Timestamp</code></td><td>Monotonically increasing integer — used for ordering ties in trigger resolution.</td></tr>
+              <tr><td><code>SourceCardId</code></td><td>The <code>ObjectId</code> of the card that generated this entry, if any.</td></tr>
+              <tr><td><code>SourceDefinition</code></td><td>The <code>EffectDefinition</code> SO — used by <code>CopySpellEffect</code> to clone the entry.</td></tr>
+              <tr><td><code>CostPaymentTiming</code></td><td><code>OnDeclaration</code> or <code>OnResolution</code>.</td></tr>
+              <tr><td><code>CostHasBeenPaid</code></td><td><code>true</code> once costs are deducted.</td></tr>
+              <tr><td><code>Reservations</code></td><td>Active <code>ReservationToken</code>s for <code>OnResolution</code> entries.</td></tr>
+              <tr><td><code>Description</code></td><td>Human-readable label for UI and logging.</td></tr>
+              <tr><td><code>TakeSnapshot()</code></td><td>Returns an immutable <code>StackEntrySnapshot</code> — carried by resolved/fizzled events.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── StackEntryType ── -->
+        <h3 id="entry-type">StackEntryType</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Value</th><th>When used</th></tr></thead>
+            <tbody>
+              <tr><td><code>Spell</code></td><td>A card played from hand via <code>PlayCardSystem</code>.</td></tr>
+              <tr><td><code>ActivatedAbility</code></td><td>An ability activated by paying a cost via <code>ActivateAbilitySystem</code>.</td></tr>
+              <tr><td><code>TriggeredAbility</code></td><td>An ability pushed by the trigger system during <code>DrainAndPushTriggers()</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── CostPaymentTiming ── -->
+        <h2 id="cost-timing">Cost Payment Timing</h2>
+        <p>Every stack entry carries a <code>CostPaymentTiming</code> that controls when resource costs are deducted:</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Value</th><th>Behaviour</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>OnDeclaration</code></td>
+                <td>Costs are paid in full when the entry is pushed. If the spell is later countered, costs are <em>not</em> refunded (matches Magic: The Gathering rules). This is the default.</td>
+              </tr>
+              <tr>
+                <td><code>OnResolution</code></td>
+                <td>Resources are <em>reserved</em> at push time (preventing double-spending) but only deducted when the entry resolves. If the entry fizzles, reservations are released — the player is not charged.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-note">
+          <strong>Setting the timing:</strong> <code>CostPaymentTiming</code> is declared on the <code>CardFaceDefinition</code> in the Inspector and read by <code>PlayCardSystem</code> when it creates the <code>PendingAction</code>.
+        </div>
+
+        <!-- ── PendingAction ── -->
+        <h2 id="pending-action">PendingAction</h2>
+        <p>Before a spell or ability lands on the stack the player goes through a staging phase — selecting modes, choosing targets, paying costs. <code>PendingAction</code> holds all of this in-progress state and is discarded once committed or cancelled.</p>
+
+        <h3 id="pending-stages">Stages</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Stage</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>SelectingModes</code></td><td>Player is choosing modal options (e.g. "deal 2 damage OR draw 2").</td></tr>
+              <tr><td><code>SelectingTargets</code></td><td>Player is picking targets. Use <code>action.Targets.Add()</code> and <code>Remove()</code>.</td></tr>
+              <tr><td><code>SelectingCosts</code></td><td>Player is choosing optional cost components (e.g. how many creatures to sacrifice).</td></tr>
+              <tr><td><code>AwaitingConfirmation</code></td><td>All selections done — waiting for the final OK.</td></tr>
+              <tr><td><code>Confirmed</code></td><td>Set automatically by <code>TryCommit()</code> on success.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="try-commit">TryCommit</h3>
+        <p><code>TryCommit(context)</code> is the key method — it validates targets, pays or reserves costs, instantiates the <code>IEffect</code>, and returns a ready <code>StackEntry</code>. Returns <code>null</code> on failure without side effects.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Casting a spell from hand</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// 1. Ask PlayCardSystem to build the PendingAction.</span>
+<span class="token-keyword">var</span> <span class="token-var">action</span> = context.PlayCardSystem.CreatePlayCardAction(card, activePlayer);
+<span class="token-keyword">if</span> (action == <span class="token-keyword">null</span>) <span class="token-keyword">return</span> <span class="token-keyword">true</span>; <span class="token-comment">// can't play — pass</span>
+
+<span class="token-comment">// 2. Let the player pick targets (your UI drives this).</span>
+action.Stage = <span class="token-type">PendingActionStage</span>.SelectingTargets;
+action.Targets.Add(chosenTarget);
+
+<span class="token-comment">// 3. Commit — pays costs, pushes to stack.</span>
+<span class="token-keyword">var</span> <span class="token-var">entry</span> = action.TryCommit(context);
+<span class="token-keyword">if</span> (entry == <span class="token-keyword">null</span>)
+{
+    action.Cancel(context);
+    <span class="token-keyword">return</span> <span class="token-keyword">true</span>; <span class="token-comment">// commit failed — pass</span>
+}
+
+<span class="token-comment">// 4. Push to the stack and fire the event.</span>
+context.ZoneManager.StackZone.Push(entry);
+context.EventBus.Publish(<span class="token-keyword">new</span> <span class="token-type">StackEntryPushedEvent</span>(entry.Effect.Source, entry), context);
+<span class="token-keyword">return</span> <span class="token-keyword">false</span>; <span class="token-comment">// returning false signals an action was taken</span></code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Shortcut via PlayCardSystem:</strong> <code>context.PlayCardSystem.CommitAndPush(action)</code> performs steps 3–4 atomically and also fires <code>CardCastEvent</code>. Prefer it over manual Push + Publish.
+        </div>
+
+        <!-- ── Priority algorithm ── -->
+        <h2 id="priority-algorithm">Priority Algorithm</h2>
+        <p>The engine runs the APNAP loop automatically inside each priority window. You only need to provide the <code>OnPriorityWindow</code> callback (or its async equivalent):</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Wiring up the priority callback</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>StateMachine.OnPriorityWindow = (player, turnCtx, gameCtx) =&gt;
+{
+    <span class="token-comment">// Return true  = player passes priority.
+    // Return false = player took an action (pushed something to the stack).</span>
+    <span class="token-keyword">if</span> (!IsHumanPlayer(player))
+        <span class="token-keyword">return</span> <span class="token-keyword">true</span>; <span class="token-comment">// AI always passes in this example</span>
+
+    <span class="token-comment">// Present UI. If the player casts a spell here, push the entry
+    // to the stack and return false.</span>
+    <span class="token-keyword">return</span> _inputQueue.Count == <span class="token-number">0</span>; <span class="token-comment">// pass if no queued actions</span>
+};</code></pre>
+        </div>
+
+        <h3 id="async-callback">Async variant</h3>
+        <p>For Unity coroutine / <code>async/await</code> games, set <code>OnPriorityWindowAsync</code> instead and drive the machine with <code>RunGameAsync(cancellationToken)</code>. The engine will <code>await</code> each priority grant, letting Unity render frames between decisions.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Async priority window</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>StateMachine.OnPriorityWindowAsync = <span class="token-keyword">async</span> (player, turnCtx, gameCtx) =&gt;
+{
+    <span class="token-comment">// Await real UI input from the player.</span>
+    <span class="token-keyword">var</span> <span class="token-var">action</span> = <span class="token-keyword">await</span> _uiController.WaitForPlayerActionAsync(player);
+    <span class="token-keyword">if</span> (action == <span class="token-keyword">null</span>) <span class="token-keyword">return</span> <span class="token-keyword">true</span>; <span class="token-comment">// player pressed Pass</span>
+
+    <span class="token-comment">// Execute the player's choice and return false (action taken).</span>
+    PushToStack(action, gameCtx);
+    <span class="token-keyword">return</span> <span class="token-keyword">false</span>;
+};
+
+<span class="token-comment">// Start the async loop (from a MonoBehaviour):</span>
+StartCoroutine(StateMachine.RunGameAsync(destroyCancellationToken).AsCoroutine());</code></pre>
+        </div>
+
+        <h3 id="apnap-detail">APNAP detail</h3>
+        <ol>
+          <li>SBAs are checked and all pending triggers are pushed to the stack.</li>
+          <li>The active player receives priority first (<code>PriorityGrantedEvent</code>).</li>
+          <li>If the player passes, priority moves to the next player in turn order (<code>PriorityPassedEvent</code>).</li>
+          <li>If the player acts (returns <code>false</code>), SBAs + triggers are run again and the round restarts from the active player.</li>
+          <li>When all players pass consecutively:
+            <ul>
+              <li><strong>Stack not empty</strong> — resolve the top entry, run SBAs/triggers, restart from the active player.</li>
+              <li><strong>Stack empty</strong> — the priority window closes; the phase or step ends.</li>
+            </ul>
+          </li>
+        </ol>
+
+        <!-- ── Resolution flow ── -->
+        <h2 id="resolution">Resolution Flow</h2>
+        <p>When <code>GameStateMachine</code> resolves the top of the stack it follows this sequence:</p>
+        <ol>
+          <li>Pop the entry.</li>
+          <li>If <code>CostPaymentTiming == OnResolution</code> and the cost hasn't been paid:
+            <ul>
+              <li>Call <code>Effect.CanExecute()</code>. If <code>false</code>, release all reservations and fire <code>StackEntryFizzledEvent</code>.</li>
+              <li>Otherwise, commit all <code>ReservationToken</code>s, then execute the effect.</li>
+            </ul>
+          </li>
+          <li>If <code>CostPaymentTiming == OnDeclaration</code>:
+            <ul>
+              <li>Call <code>Effect.CanExecute()</code>. If <code>false</code>, fire <code>StackEntryFizzledEvent</code>.</li>
+              <li>Otherwise, execute the effect.</li>
+            </ul>
+          </li>
+          <li>Fire <code>StackEntryResolvedEvent</code> (or <code>StackEntryFizzledEvent</code>).</li>
+        </ol>
+
+        <div class="callout callout-warning">
+          <strong>Fizzle:</strong> An entry fizzles when all its targets have become invalid before resolution (e.g., the targeted card left the battlefield). The effect does not execute, and <code>OnResolution</code> reservations are released.
+        </div>
+
+        <!-- ── Auto-actions ── -->
+        <h2 id="auto-actions">Auto-Actions</h2>
+        <p>Some effects run automatically at the start of a phase or step — resource resets, card draws, damage dealing — without going through the stack. They are configured as <code>EffectDefinition</code> lists on <code>PhaseDefinition</code> and <code>StepDefinition</code> assets and executed by the engine before the first priority window. Players cannot respond to auto-actions individually.</p>
+
+        <!-- ── Events ── -->
+        <h2 id="events">Stack Events</h2>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Event</th><th>When fired</th></tr></thead>
+            <tbody>
+              <tr><td><code>PriorityGrantedEvent</code></td><td>Each time a player receives priority.</td></tr>
+              <tr><td><code>PriorityPassedEvent</code></td><td>Each time a player passes priority.</td></tr>
+              <tr><td><code>StackEntryPushedEvent</code></td><td>After any entry is pushed to the stack (spell, ability, or trigger).</td></tr>
+              <tr><td><code>StackEntryResolvedEvent</code></td><td>After an entry resolves successfully. Carries a <code>StackEntrySnapshot</code>.</td></tr>
+              <tr><td><code>StackEntryFizzledEvent</code></td><td>When an entry fizzles. Includes a <code>FizzleReason</code> string.</td></tr>
+              <tr><td><code>CardCastEvent</code></td><td>After a card spell is pushed — carries the card, entry, caster, and the zone it was cast from.</td></tr>
+              <tr><td><code>AbilityActivatedEvent</code></td><td>After an activated ability is pushed — carries the source card and ability definition.</td></tr>
+              <tr><td><code>SpellCopiedEvent</code></td><td>After <code>CopySpellEffect</code> pushes a copy — carries the original and new entries.</td></tr>
+              <tr><td><code>PendingActionCommittedEvent</code></td><td>Inside <code>TryCommit()</code> just before the entry is returned to the caller.</td></tr>
+              <tr><td><code>PendingActionCancelledEvent</code></td><td>When <code>Cancel()</code> is called on a <code>PendingAction</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="abilities.html">← Abilities</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="resources.html">Resources →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#stack-zone">StackZone</a>
+          <a href="#stack-entry">StackEntry</a>
+          <a href="#entry-type" class="toc-sub">StackEntryType</a>
+          <a href="#cost-timing">Cost Payment Timing</a>
+          <a href="#pending-action">PendingAction</a>
+          <a href="#pending-stages" class="toc-sub">Stages</a>
+          <a href="#try-commit" class="toc-sub">TryCommit</a>
+          <a href="#priority-algorithm">Priority Algorithm</a>
+          <a href="#async-callback" class="toc-sub">Async variant</a>
+          <a href="#apnap-detail" class="toc-sub">APNAP detail</a>
+          <a href="#resolution">Resolution Flow</a>
+          <a href="#auto-actions">Auto-Actions</a>
+          <a href="#events">Stack Events</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>
