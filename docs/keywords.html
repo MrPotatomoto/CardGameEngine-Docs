@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Keywords — Card Game Engine</title>
+  <meta name="description" content="Define named keyword abilities with KeywordDefinition assets, grant them to cards via KeywordAbility, and query them at runtime from any game system." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+            <li><a href="keywords.html" class="active">Keywords</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="stack.html">Stack &amp; Priority</a></li>
+            <li><a href="resources.html">Resources</a></li>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html">State-Based Actions</a></li>
+            <li><a href="win-conditions.html">Win Conditions</a></li>
+            <li><a href="deck-management.html">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="no-code-setup.html">No-Code Setup</a></li>
+            <li><a href="asset-registry.html">Asset Registry</a></li>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="docs-main">
+      <article class="docs-content">
+        <div class="page-header">
+          <div class="page-header-meta">Core Concepts</div>
+          <h1>Keywords</h1>
+          <p class="page-subtitle">Data-driven named abilities. Define them once as assets, grant them to cards, and check for them from any system that needs to enforce their effects.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>A <strong>keyword</strong> in Card Game Engine is a named ability token — a label that carries meaning defined entirely by the systems that read it. The engine has no built-in rules for Flying, Trample, Haste, or any other keyword; it simply provides a clean way to declare that a card <em>has</em> a keyword, and a clean way for systems to ask whether it does.</p>
+
+        <p>This separation keeps keywords flexible. The same keyword can influence combat, targeting, SBAs, cost calculations, and tooltip rendering, each system checking independently without the keyword needing to know about any of them.</p>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🏷️</div>
+            <h3>KeywordDefinition</h3>
+            <p>A ScriptableObject that names a keyword and carries reminder text. One asset per keyword.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>KeywordAbility</h3>
+            <p>An <code>IntrinsicAbility</code> that grants a keyword to a card face. Added to a <code>CardDefinition</code>'s abilities list.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>HasKeyword()</h3>
+            <p>Available on both <code>CardDefinition</code> and <code>CardInstance</code>. O(n) over intrinsic abilities — fast for typical counts.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📚</div>
+            <h3>KeywordLibrary</h3>
+            <p>An optional project-wide catalog for resolving keywords by name. Needed only for string-based lookups.</p>
+          </div>
+        </div>
+
+        <h2 id="keyword-definition">KeywordDefinition</h2>
+        <p>Create a <code>KeywordDefinition</code> asset for every keyword in your game. Each asset is a stable identity — card data references the asset directly, not a string name.</p>
+
+        <p><strong>Create via:</strong> <em>Assets → Create → Card Game Engine → Keyword</em></p>
+
+        <table>
+          <thead>
+            <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KeywordName</code></td>
+              <td><code>string</code></td>
+              <td>Display name printed on the card and used as the lookup key in <code>KeywordLibrary</code>. E.g. <code>"Flying"</code>.</td>
+            </tr>
+            <tr>
+              <td><code>ReminderText</code></td>
+              <td><code>string</code></td>
+              <td>Rules reminder shown in parentheses on the card. E.g. <code>"This creature can only be blocked by creatures with flying or reach."</code></td>
+            </tr>
+            <tr>
+              <td><code>ShortCode</code></td>
+              <td><code>string</code></td>
+              <td>Compact identifier for UI badges. Falls back to <code>KeywordName</code> if left blank.</td>
+            </tr>
+            <tr>
+              <td><code>IsEvergreen</code></td>
+              <td><code>bool</code></td>
+              <td>Flag for evergreen keywords (appear across many sets). Used by tooltip renderers and search UIs — no engine behavior.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>The <code>FormatReminderLine()</code> helper returns <code>"Flying (This creature can only be blocked by...)"</code> if reminder text is set, or just <code>"Flying"</code> if not — convenient for tooltip renderers.</p>
+
+        <pre><code><span class="token-keyword">var</span> <span class="token-var">line</span> = flyingDef.FormatReminderLine();
+<span class="token-comment">// → "Flying (This creature can only be blocked by creatures with flying or reach.)"</span></code></pre>
+
+        <h2 id="keyword-ability">KeywordAbility</h2>
+        <p>A <code>KeywordAbility</code> is a <code>ScriptableObject</code> asset that links a <code>KeywordDefinition</code> to a card face. It extends <code>IntrinsicAbility</code>, which is the base class for all static, always-on abilities defined in <code>CardDefinition</code>.</p>
+
+        <p><strong>Create via:</strong> <em>Assets → Create → Card Game Engine → Abilities → Keyword Ability</em></p>
+
+        <p>Once created, assign the <code>KeywordDefinition</code> in the Inspector, then add the <code>KeywordAbility</code> asset to a <code>CardDefinition</code>'s <strong>Intrinsic Abilities</strong> array:</p>
+
+        <ol>
+          <li>Create a <code>KeywordDefinition</code> asset: <em>Card Game Engine → Keyword</em></li>
+          <li>Create a <code>KeywordAbility</code> asset: <em>Card Game Engine → Abilities → Keyword Ability</em></li>
+          <li>In the <code>KeywordAbility</code> Inspector, set <strong>Keyword</strong> to your definition asset.</li>
+          <li>Open a <code>CardDefinition</code> and add the <code>KeywordAbility</code> to the <strong>Intrinsic Abilities</strong> list.</li>
+        </ol>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> <code>KeywordAbility</code> assets are reusable. Create one <em>Flying</em> ability asset and share it across every card that flies — you don't need a separate ability asset per card.
+        </div>
+
+        <h2 id="has-keyword">Checking for a keyword</h2>
+        <p>Two <code>HasKeyword</code> methods are available depending on whether you have a card definition or a live instance:</p>
+
+        <table>
+          <thead>
+            <tr><th>Method</th><th>Source</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>CardDefinition.HasKeyword(KeywordDefinition)</code></td>
+              <td>Static card data</td>
+              <td>Checks the definition's <code>IntrinsicAbilities</code> array. Useful when you don't have a live instance yet, or when checking the <em>printed</em> keyword independent of face state.</td>
+            </tr>
+            <tr>
+              <td><code>CardInstance.HasKeyword(KeywordDefinition)</code></td>
+              <td>Live card in play</td>
+              <td>Delegates to <code>CurrentFace.HasKeyword()</code>. Automatically accounts for face-down cards, transformed cards, and any other face-switching. Prefer this at runtime.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <pre><code><span class="token-comment">// Checking a live card in play (preferred at runtime):</span>
+<span class="token-keyword">bool</span> hasFlying = attacker.HasKeyword(_flyingDefinition);
+
+<span class="token-comment">// Equivalent long form — same result:</span>
+<span class="token-keyword">bool</span> hasFlying = attacker.CurrentFace?.HasKeyword(_flyingDefinition) ?? <span class="token-keyword">false</span>;
+
+<span class="token-comment">// Checking the card definition directly (e.g. deck validation):</span>
+<span class="token-keyword">bool</span> hasTrample = template.DefaultFace.HasKeyword(_trampleDefinition);</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Why CurrentFace?</strong> A double-faced card has two <code>CardDefinition</code> assets — one per face. <code>CardInstance.HasKeyword()</code> reads <code>CurrentFace</code> (the active face index), so a face-down card that loses Flying, or a transformed card that gains Trample, will reflect the correct state automatically.
+        </div>
+
+        <h2 id="keyword-library">KeywordLibrary</h2>
+        <p>The <code>KeywordLibrary</code> is an optional catalog asset that lets you resolve a <code>KeywordDefinition</code> by its name string. It is not required for normal combat or ability checks — those use direct asset references. The library is useful when:</p>
+
+        <ul>
+          <li>A rules-text parser needs to find the definition for the word <code>"Flying"</code> in a card's text box.</li>
+          <li>A deck-builder UI needs to filter cards by keyword name typed in a search box.</li>
+          <li>A tooltip renderer wants to look up reminder text for a keyword badge.</li>
+        </ul>
+
+        <p><strong>Create via:</strong> <em>Assets → Create → Card Game Engine → Keyword Library</em></p>
+
+        <p>Lookup is <strong>case-insensitive</strong> and backed by a lazy dictionary. The cache is rebuilt on first use and invalidated on domain reload.</p>
+
+        <pre><code><span class="token-comment">// Inject via Inspector: [SerializeField] KeywordLibrary _library;</span>
+
+<span class="token-comment">// Resolve by name (returns null if not found):</span>
+<span class="token-type">KeywordDefinition</span> flying = _library.Resolve(<span class="token-string">"Flying"</span>);
+
+<span class="token-comment">// Try-resolve pattern:</span>
+<span class="token-keyword">if</span> (_library.TryResolve(<span class="token-string">"flying"</span>, <span class="token-keyword">out var</span> <span class="token-var">def</span>))
+    Debug.Log(def.FormatReminderLine());</code></pre>
+
+        <h2 id="generator">KeywordLibrary Generator</h2>
+        <p>Rather than manually maintaining the library's keyword list, use the editor generator to auto-populate it from all <code>KeywordDefinition</code> assets in the project.</p>
+
+        <p><strong>Workflow:</strong></p>
+        <ol>
+          <li>Select your <code>KeywordLibrary</code> asset in the Project window.</li>
+          <li>Run <em>Card Game Engine → Generate Keyword Library</em> from the menu bar.</li>
+          <li>Confirm the dialog. The generator scans every <code>KeywordDefinition</code> in the project, sorts them alphabetically by <code>KeywordName</code>, and writes them into the library.</li>
+          <li>Re-run any time you add or rename keyword assets.</li>
+        </ol>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> The menu item is greyed out when no <code>KeywordLibrary</code> asset is selected. Select the asset first, then run the generator.
+        </div>
+
+        <p>The generator replaces all existing entries, so stale references to deleted keyword assets are automatically removed. It also calls <code>InvalidateCache()</code> on the library after writing, so lookups immediately reflect the new data without a domain reload.</p>
+
+        <h2 id="system-example">Writing a keyword-aware system</h2>
+        <p>Systems that enforce keyword rules receive a <code>KeywordDefinition</code> reference as a <code>[SerializeField]</code> and call <code>HasKeyword()</code> on the relevant cards. No string parsing, no magic constants.</p>
+
+        <pre><code><span class="token-keyword">using</span> UnityEngine;
+<span class="token-keyword">using</span> CardGameEngine;
+
+<span class="token-keyword">public class</span> <span class="token-type">SimpleCombatSystem</span> : <span class="token-type">MonoBehaviour</span>
+{
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">KeywordDefinition</span> _flying;
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">KeywordDefinition</span> _reach;
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">KeywordDefinition</span> _trample;
+
+    <span class="token-comment">/// Returns true if blocker can legally block attacker.</span>
+    <span class="token-keyword">public bool</span> CanBlock(<span class="token-type">CardInstance</span> attacker, <span class="token-type">CardInstance</span> blocker)
+    {
+        <span class="token-comment">// A flying attacker can only be blocked by flyers or reach creatures.</span>
+        <span class="token-keyword">if</span> (attacker.HasKeyword(_flying))
+            <span class="token-keyword">return</span> blocker.HasKeyword(_flying) || blocker.HasKeyword(_reach);
+
+        <span class="token-keyword">return true</span>;
+    }
+
+    <span class="token-comment">/// Assigns excess combat damage to the defending player when attacker has trample.</span>
+    <span class="token-keyword">public void</span> AssignCombatDamage(<span class="token-type">CardInstance</span> attacker, <span class="token-type">CardInstance</span> blocker,
+                                    <span class="token-type">StatDefinition</span> power, <span class="token-type">StatDefinition</span> toughness,
+                                    <span class="token-type">Player</span> defender, <span class="token-type">StatDefinition</span> lifeStat)
+    {
+        <span class="token-keyword">int</span> dmg = attacker.GetStat(power);
+        <span class="token-keyword">int</span> lethal = blocker.GetStat(toughness);
+
+        <span class="token-keyword">if</span> (attacker.HasKeyword(_trample) &amp;&amp; dmg > lethal)
+        {
+            blocker.ModifyStat(toughness, -lethal);
+            defender.ModifyStat(lifeStat, -(dmg - lethal));
+        }
+        <span class="token-keyword">else</span>
+        {
+            blocker.ModifyStat(toughness, -dmg);
+        }
+    }
+}</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Pattern:</strong> Inject keyword definitions via <code>[SerializeField]</code> and assign them in the Inspector. This keeps your system decoupled from keyword names and makes it easy to unit-test with different keyword assets.
+        </div>
+
+        <h2 id="summary">Quick reference</h2>
+
+        <table>
+          <thead>
+            <tr><th>Asset / API</th><th>What it does</th><th>When to use it</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>KeywordDefinition</code></td>
+              <td>Names a keyword + carries reminder text</td>
+              <td>Always — one asset per keyword in your game</td>
+            </tr>
+            <tr>
+              <td><code>KeywordAbility</code></td>
+              <td>Grants a keyword to a card face</td>
+              <td>Add to <code>CardDefinition.IntrinsicAbilities</code></td>
+            </tr>
+            <tr>
+              <td><code>CardInstance.HasKeyword()</code></td>
+              <td>Checks the active face at runtime</td>
+              <td>Combat, targeting, SBAs, any runtime check</td>
+            </tr>
+            <tr>
+              <td><code>CardDefinition.HasKeyword()</code></td>
+              <td>Checks a definition directly</td>
+              <td>Deck validation, card search, static analysis</td>
+            </tr>
+            <tr>
+              <td><code>KeywordLibrary</code></td>
+              <td>Name → asset lookup catalog</td>
+              <td>Text parsers, search UIs, tooltip renderers</td>
+            </tr>
+            <tr>
+              <td><code>KeywordLibraryGenerator</code></td>
+              <td>Auto-populates a library from the project</td>
+              <td>Run after creating or renaming keyword assets</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="abilities.html">← Abilities</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="stack.html">Stack &amp; Priority →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#keyword-definition">KeywordDefinition</a>
+          <a href="#keyword-ability">KeywordAbility</a>
+          <a href="#has-keyword">Checking for a keyword</a>
+          <a href="#keyword-library">KeywordLibrary</a>
+          <a href="#generator">Library Generator</a>
+          <a href="#system-example">Writing a system</a>
+          <a href="#summary">Quick reference</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>
