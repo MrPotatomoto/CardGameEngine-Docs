@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
 </head>
 <body class="docs-page">
 
@@ -17,14 +17,14 @@
       <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <a href="/index.html" class="nav-logo">
+      <a href="../index.html" class="nav-logo">
         <span class="logo-mark">CGE</span>
         <span class="logo-text">Card Game Engine</span>
       </a>
       <nav class="nav-links">
-        <a href="/docs/getting-started.html" class="active">Docs</a>
-        <a href="/docs/tutorials.html">Tutorials</a>
-        <a href="/docs/api-reference.html">API</a>
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
         <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
           GitHub
@@ -46,68 +46,68 @@
         <div class="nav-section">
           <span class="nav-section-label">Introduction</span>
           <ul>
-            <li><a href="/docs/getting-started.html"{% if pageKey == "getting-started" %} class="active"{% endif %}>Getting Started</a></li>
-            <li><a href="/docs/tutorials.html"{% if pageKey == "tutorials" %} class="active"{% endif %}>Tutorials</a></li>
+            <li><a href="getting-started.html"{% if pageKey == "getting-started" %} class="active"{% endif %}>Getting Started</a></li>
+            <li><a href="tutorials.html"{% if pageKey == "tutorials" %} class="active"{% endif %}>Tutorials</a></li>
           </ul>
         </div>
 
         <div class="nav-section">
           <span class="nav-section-label">Core Concepts</span>
           <ul>
-            <li><a href="/docs/cards.html"{% if pageKey == "cards" %} class="active"{% endif %}>Cards</a></li>
-            <li><a href="/docs/zones.html"{% if pageKey == "zones" %} class="active"{% endif %}>Zones</a></li>
-            <li><a href="/docs/effects.html"{% if pageKey == "effects" %} class="active"{% endif %}>Effects</a></li>
-            <li><a href="/docs/events.html"{% if pageKey == "events" %} class="active"{% endif %}>Events</a></li>
-            <li><a href="/docs/abilities.html"{% if pageKey == "abilities" %} class="active"{% endif %}>Abilities</a></li>
-            <li><a href="/docs/keywords.html"{% if pageKey == "keywords" %} class="active"{% endif %}>Keywords</a></li>
+            <li><a href="cards.html"{% if pageKey == "cards" %} class="active"{% endif %}>Cards</a></li>
+            <li><a href="zones.html"{% if pageKey == "zones" %} class="active"{% endif %}>Zones</a></li>
+            <li><a href="effects.html"{% if pageKey == "effects" %} class="active"{% endif %}>Effects</a></li>
+            <li><a href="events.html"{% if pageKey == "events" %} class="active"{% endif %}>Events</a></li>
+            <li><a href="abilities.html"{% if pageKey == "abilities" %} class="active"{% endif %}>Abilities</a></li>
+            <li><a href="keywords.html"{% if pageKey == "keywords" %} class="active"{% endif %}>Keywords</a></li>
           </ul>
         </div>
 
         <div class="nav-section">
           <span class="nav-section-label">Game Systems</span>
           <ul>
-            <li><a href="/docs/stack.html"{% if pageKey == "stack" %} class="active"{% endif %}>Stack &amp; Priority</a></li>
-            <li><a href="/docs/resources.html"{% if pageKey == "resources" %} class="active"{% endif %}>Resources</a></li>
-            <li><a href="/docs/combat.html"{% if pageKey == "combat" %} class="active"{% endif %}>Combat</a></li>
-            <li><a href="/docs/attachments.html"{% if pageKey == "attachments" %} class="active"{% endif %}>Attachments</a></li>
-            <li><a href="/docs/player-stats.html"{% if pageKey == "player-stats" %} class="active"{% endif %}>Player Stats</a></li>
-            <li><a href="/docs/state-based-actions.html"{% if pageKey == "state-based-actions" %} class="active"{% endif %}>State-Based Actions</a></li>
-            <li><a href="/docs/win-conditions.html"{% if pageKey == "win-conditions" %} class="active"{% endif %}>Win Conditions</a></li>
-            <li><a href="/docs/deck-management.html"{% if pageKey == "deck-management" %} class="active"{% endif %}>Deck Management</a></li>
-            <li><a href="/docs/ai.html"{% if pageKey == "ai" %} class="active"{% endif %}>AI Players</a></li>
+            <li><a href="stack.html"{% if pageKey == "stack" %} class="active"{% endif %}>Stack &amp; Priority</a></li>
+            <li><a href="resources.html"{% if pageKey == "resources" %} class="active"{% endif %}>Resources</a></li>
+            <li><a href="combat.html"{% if pageKey == "combat" %} class="active"{% endif %}>Combat</a></li>
+            <li><a href="attachments.html"{% if pageKey == "attachments" %} class="active"{% endif %}>Attachments</a></li>
+            <li><a href="player-stats.html"{% if pageKey == "player-stats" %} class="active"{% endif %}>Player Stats</a></li>
+            <li><a href="state-based-actions.html"{% if pageKey == "state-based-actions" %} class="active"{% endif %}>State-Based Actions</a></li>
+            <li><a href="win-conditions.html"{% if pageKey == "win-conditions" %} class="active"{% endif %}>Win Conditions</a></li>
+            <li><a href="deck-management.html"{% if pageKey == "deck-management" %} class="active"{% endif %}>Deck Management</a></li>
+            <li><a href="ai.html"{% if pageKey == "ai" %} class="active"{% endif %}>AI Players</a></li>
           </ul>
         </div>
 
         <div class="nav-section">
           <span class="nav-section-label">Advanced</span>
           <ul>
-            <li><a href="/docs/continuous-effects.html"{% if pageKey == "continuous-effects" %} class="active"{% endif %}>Continuous Effects</a></li>
-            <li><a href="/docs/replacement-effects.html"{% if pageKey == "replacement-effects" %} class="active"{% endif %}>Replacement Effects</a></li>
-            <li><a href="/docs/targeting.html"{% if pageKey == "targeting" %} class="active"{% endif %}>Targeting</a></li>
-            <li><a href="/docs/tokens.html"{% if pageKey == "tokens" %} class="active"{% endif %}>Tokens</a></li>
-            <li><a href="/docs/scry.html"{% if pageKey == "scry" %} class="active"{% endif %}>Scry</a></li>
+            <li><a href="continuous-effects.html"{% if pageKey == "continuous-effects" %} class="active"{% endif %}>Continuous Effects</a></li>
+            <li><a href="replacement-effects.html"{% if pageKey == "replacement-effects" %} class="active"{% endif %}>Replacement Effects</a></li>
+            <li><a href="targeting.html"{% if pageKey == "targeting" %} class="active"{% endif %}>Targeting</a></li>
+            <li><a href="tokens.html"{% if pageKey == "tokens" %} class="active"{% endif %}>Tokens</a></li>
+            <li><a href="scry.html"{% if pageKey == "scry" %} class="active"{% endif %}>Scry</a></li>
           </ul>
         </div>
 
         <div class="nav-section">
           <span class="nav-section-label">Tools</span>
           <ul>
-            <li><a href="/docs/no-code-setup.html"{% if pageKey == "no-code-setup" %} class="active"{% endif %}>No-Code Setup</a></li>
-            <li><a href="/docs/asset-registry.html"{% if pageKey == "asset-registry" %} class="active"{% endif %}>Asset Registry</a></li>
-            <li><a href="/docs/serialization.html"{% if pageKey == "serialization" %} class="active"{% endif %}>Serialization</a></li>
-            <li><a href="/docs/undo.html"{% if pageKey == "undo" %} class="active"{% endif %}>Undo &amp; Checkpoints</a></li>
-            <li><a href="/docs/ability-editor.html"{% if pageKey == "ability-editor" %} class="active"{% endif %}>Ability Editor</a></li>
-            <li><a href="/docs/editor-tools.html"{% if pageKey == "editor-tools" %} class="active"{% endif %}>Editor Tools</a></li>
-            <li><a href="/docs/node-graph-editor.html"{% if pageKey == "node-graph-editor" %} class="active"{% endif %}>Node Graph Editor</a></li>
-            <li><a href="/docs/draft-simulator.html"{% if pageKey == "draft-simulator" %} class="active"{% endif %}>Draft &amp; Booster</a></li>
-            <li><a href="/docs/replay-viewer.html"{% if pageKey == "replay-viewer" %} class="active"{% endif %}>Replay Viewer</a></li>
+            <li><a href="no-code-setup.html"{% if pageKey == "no-code-setup" %} class="active"{% endif %}>No-Code Setup</a></li>
+            <li><a href="asset-registry.html"{% if pageKey == "asset-registry" %} class="active"{% endif %}>Asset Registry</a></li>
+            <li><a href="serialization.html"{% if pageKey == "serialization" %} class="active"{% endif %}>Serialization</a></li>
+            <li><a href="undo.html"{% if pageKey == "undo" %} class="active"{% endif %}>Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html"{% if pageKey == "ability-editor" %} class="active"{% endif %}>Ability Editor</a></li>
+            <li><a href="editor-tools.html"{% if pageKey == "editor-tools" %} class="active"{% endif %}>Editor Tools</a></li>
+            <li><a href="node-graph-editor.html"{% if pageKey == "node-graph-editor" %} class="active"{% endif %}>Node Graph Editor</a></li>
+            <li><a href="draft-simulator.html"{% if pageKey == "draft-simulator" %} class="active"{% endif %}>Draft &amp; Booster</a></li>
+            <li><a href="replay-viewer.html"{% if pageKey == "replay-viewer" %} class="active"{% endif %}>Replay Viewer</a></li>
           </ul>
         </div>
 
         <div class="nav-section">
           <span class="nav-section-label">Reference</span>
           <ul>
-            <li><a href="/docs/api-reference.html"{% if pageKey == "api-reference" %} class="active"{% endif %}>API Reference</a></li>
+            <li><a href="api-reference.html"{% if pageKey == "api-reference" %} class="active"{% endif %}>API Reference</a></li>
           </ul>
         </div>
 
@@ -119,6 +119,6 @@
     </main>
   </div>
 
-  <script src="/assets/js/app.js"></script>
+  <script src="../assets/js/app.js"></script>
 </body>
 </html>
