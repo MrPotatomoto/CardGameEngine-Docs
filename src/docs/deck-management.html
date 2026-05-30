@@ -1,0 +1,303 @@
+---
+layout: base.njk
+title: "Deck Management"
+description: "DeckDefinition, MulliganSystem, and SearchEffect: build deck lists in the Inspector, deal opening hands with mulligan support, and implement tutor effects."
+pageKey: deck-management
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Deck Management</div>
+          <h1>Deck Management</h1>
+          <p class="doc-lead">Build deck lists in the Inspector with <code>DeckDefinition</code>, deal opening hands with full mulligan support via <code>MulliganSystem</code>, and implement tutor effects with <code>SearchEffect</code>.</p>
+        </div>
+
+        <h2 id="deck-definition">DeckDefinition</h2>
+        <p><code>DeckDefinition</code> is a <code>ScriptableObject</code> that holds an Inspector-editable list of cards and copy counts. Create one via <strong>Create → Card Game Engine → Deck Definition</strong>.</p>
+        <p>Each entry in the list is a <code>DeckEntry</code> — a <code>CardTemplate</code> reference and a copy count (minimum 1). The order of entries determines the initial zone order before shuffling.</p>
+
+        <h3 id="populate">Populating a library zone</h3>
+        <p>Call <code>Populate</code> from your <code>GameBootstrapper</code> after creating your zones. It instantiates one <code>CardInstance</code> per entry × count and transfers each into the zone via <code>ZoneManager.Transfer</code>, firing <code>CardEnteredZoneEvent</code> for each card.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — GameBootstrapper.SetupPlayerResources</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">protected override void</span> SetupPlayerResources(<span class="token-type">Player</span> player, <span class="token-type">GameContext</span> ctx)
+{
+    <span class="token-keyword">var</span> <span class="token-var">library</span> = ctx.ZoneManager.GetZone(_libraryDefinition, player);
+    _deckDefinition.Populate(library, owner: player, controller: player, ctx);
+    <span class="token-comment">// Shuffle happens later in MulliganSystem — or call library.Shuffle() here</span>
+}</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> Entries with a null template or a count ≤ 0 are silently skipped. Use <code>DeckDefinition.TotalCardCount</code> to verify the total before play begins.
+        </div>
+
+        <h2 id="mulligan-system">MulliganSystem</h2>
+        <p><code>MulliganSystem</code> handles the opening-hand ritual: shuffle the library, deal an opening hand, and offer players mulligans until they keep or exhaust their allowance.</p>
+
+        <h3 id="mulligan-setup">Setup</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Wiring up MulliganSystem</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// 1. Subscribe to the mulligan offer event before calling RunOpeningHands.</span>
+Context.ReplacementEffectLayer.Process(<span class="token-keyword">new</span> <span class="token-type">MulliganOfferedEvent</span>(...)); <span class="token-comment">// handled internally</span>
+
+context.EventBus.Subscribe&lt;<span class="token-type">MulliganOfferedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-comment">// Show UI to the player, then call Keep or Mulligan on the state object.</span>
+    <span class="token-keyword">bool</span> wantsToMulligan = ShowMulliganUI(e.State.Hand, e.State.CardsInNextHand);
+    <span class="token-keyword">if</span> (wantsToMulligan)
+        e.State.Mulligan();   <span class="token-comment">// return entire hand</span>
+    <span class="token-keyword">else</span>
+        e.State.Keep();
+});
+
+<span class="token-comment">// 2. Create the system and run it.</span>
+<span class="token-keyword">var</span> <span class="token-var">mulliganSystem</span> = <span class="token-keyword">new</span> <span class="token-type">MulliganSystem</span>(openingHandSize: <span class="token-number">7</span>, maxMulligans: <span class="token-number">7</span>);
+mulliganSystem.DrawTag         = drawTransferTag;     <span class="token-comment">// optional — identifies draws</span>
+mulliganSystem.MulliganReturnTag = mulliganReturnTag; <span class="token-comment">// optional</span>
+
+mulliganSystem.RunOpeningHands(players, context, _libraryDefinition, _handDefinition);</code></pre>
+        </div>
+
+        <h3 id="mulligan-state">MulliganState</h3>
+        <p>The event carries a <code>MulliganState</code> object that your subscriber uses to record the player's decision:</p>
+
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Player</code></td><td>The player being offered the mulligan.</td></tr>
+            <tr><td><code>Hand</code></td><td>Snapshot of current hand cards.</td></tr>
+            <tr><td><code>MulliganNumber</code></td><td><code>0</code> = first offer; <code>1</code> = after first mulligan; etc.</td></tr>
+            <tr><td><code>CardsInNextHand</code></td><td>How many cards they would draw if they mulligan now.</td></tr>
+            <tr><td><code>Keep()</code></td><td>Accept this hand. The mulligan sequence ends.</td></tr>
+            <tr><td><code>Mulligan()</code></td><td>Return entire hand to library, draw fewer cards.</td></tr>
+            <tr><td><code>Mulligan(cardsToReturn)</code></td><td>Return a specific subset of cards (partial mulligan variant).</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="mulligan-variants">Mulligan variants</h3>
+        <p>The default hand-size reduction is Vancouver rules (draw one fewer per mulligan). Override the delegate to use other schemes:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — London mulligan (always draw 7)</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// London: always draw 7, but after keeping the player puts back N cards.
+// (The "put back" step is a separate mechanic your game layer handles.)</span>
+mulliganSystem.HandSizeAfterMulligan = n =&gt; <span class="token-number">7</span>;
+
+<span class="token-comment">// Flat -2 per mulligan</span>
+mulliganSystem.HandSizeAfterMulligan = n =&gt; Math.Max(<span class="token-number">0</span>, <span class="token-number">7</span> - n * <span class="token-number">2</span>);</code></pre>
+        </div>
+
+        <!-- ── DeckFormatDefinition ── -->
+        <h2 id="deck-format">DeckFormatDefinition</h2>
+        <p>Create via <strong>Create → Card Game Engine → Deck Format Definition</strong>. A <code>DeckFormatDefinition</code> asset declares the construction rules for a format. Pass it to <code>DeckDefinition.Validate()</code> to check legality.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Field</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>FormatName</code></td><td>Display name, e.g. <em>"Standard"</em>, <em>"Commander"</em>, <em>"Draft"</em>.</td></tr>
+              <tr><td><code>MinDeckSize</code></td><td>Minimum total card count. <code>0</code> = not enforced. Default: <code>60</code>.</td></tr>
+              <tr><td><code>MaxDeckSize</code></td><td>Maximum total card count. <code>0</code> = not enforced.</td></tr>
+              <tr><td><code>MaxCopiesOfAnyCard</code></td><td>Max copies of a single template. <code>0</code> = unlimited. Default: <code>4</code>. Duplicate entries for the same template are summed before checking.</td></tr>
+              <tr><td><code>EnforceSetConstraints</code></td><td>When <code>true</code>, every card's set must appear in <code>AllowedSets</code>.</td></tr>
+              <tr><td><code>AllowedSets</code></td><td>The legal <code>SetDefinition</code> assets for this format.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="validate">Validating a deck</h3>
+        <p><code>DeckDefinition.Validate(format)</code> returns a list of <code>DeckViolation</code> objects — one per broken rule. An empty list means the deck is legal.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Checking legality before a match</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">violations</span> = _deckDefinition.Validate(standardFormat);
+
+<span class="token-keyword">if</span> (violations.Count == <span class="token-number">0</span>)
+{
+    StartMatch();
+}
+<span class="token-keyword">else</span>
+{
+    <span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">v</span> <span class="token-keyword">in</span> violations)
+        errorPanel.AddLine(v.Description);  <span class="token-comment">// human-readable message</span>
+}</code></pre>
+        </div>
+
+        <h3 id="deck-violation">DeckViolation</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Property</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Type</code></td><td><code>TooFewCards</code>, <code>TooManyCards</code>, <code>TooManyCopiesOfCard</code>, or <code>CardNotInAllowedSet</code>.</td></tr>
+              <tr><td><code>Description</code></td><td>Ready-to-display message, e.g. <em>"Deck contains 55 cards; minimum for this format is 60."</em></td></tr>
+              <tr><td><code>OffendingTemplate</code></td><td>The specific card that broke a per-template rule, or <code>null</code> for size violations.</td></tr>
+              <tr><td><code>ActualCount</code></td><td>The count that triggered the violation.</td></tr>
+              <tr><td><code>AllowedCount</code></td><td>The limit that was exceeded (or required minimum for <code>TooFewCards</code>).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Sideboard ── -->
+        <h2 id="sideboard">SideboardDefinition</h2>
+        <p>Create via <strong>Create → Card Game Engine → Sideboard Definition</strong>. A sideboard is a companion list of cards that can be swapped into the main deck between games in a match.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Property</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Entries</code></td><td>The sideboard cards and their copy counts (<code>IReadOnlyList&lt;DeckEntry&gt;</code>).</td></tr>
+              <tr><td><code>MaxSize</code></td><td>Optional maximum total card count enforced by the asset. Default: <code>15</code>. Set to <code>0</code> for no asset-level limit.</td></tr>
+              <tr><td><code>TotalCardCount</code></td><td>Sum of all valid entry counts.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── BetweenGamesManager ── -->
+        <h2 id="between-games">BetweenGamesManager</h2>
+        <p><code>BetweenGamesManager</code> owns the between-game sideboard ritual. It keeps a mutable working copy of the deck and sideboard, applies and reverts swaps, validates the combined configuration, and populates the library zone for the next game — all without touching any live <code>Zone</code> or <code>CardInstance</code> objects.</p>
+
+        <h3 id="between-games-workflow">Typical workflow</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Between-game sideboard session</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// 1. Create a manager after each game ends.</span>
+<span class="token-keyword">var</span> <span class="token-var">manager</span> = <span class="token-keyword">new</span> <span class="token-type">BetweenGamesManager</span>(_deckDefinition, _sideboardDefinition);
+
+<span class="token-comment">// 2. Display the current deck and sideboard to the player.</span>
+ShowSideboardUI(manager.GetActiveMainDeckEntries(),
+                manager.GetActiveSideboardEntries());
+
+<span class="token-comment">// 3. Apply a swap: bring 2 CounterSpells from side, send 2 Fireballs to side.</span>
+<span class="token-keyword">if</span> (!manager.TrySwap(counterSpellDef, fireballDef, <span class="token-number">2</span>, <span class="token-keyword">out</span> <span class="token-keyword">string</span> error))
+    ShowError(error);
+
+<span class="token-comment">// 4. Optionally validate the final configuration.</span>
+<span class="token-keyword">var</span> <span class="token-var">violations</span> = manager.Validate(standardFormat);
+
+<span class="token-comment">// 5. At game start, populate the library with the swapped deck
+//    (call this instead of DeckDefinition.Populate).</span>
+manager.PopulateMainDeck(library, owner: player, controller: player, context);
+library.Shuffle();</code></pre>
+        </div>
+
+        <h3 id="between-games-api">BetweenGamesManager API</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Member</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>TrySwap(sideCard, mainCard, count, out error)</code></td><td>Exchanges <code>count</code> copies of <code>sideCard</code> into the main deck for <code>count</code> copies of <code>mainCard</code>. Returns <code>false</code> with a human-readable error if either side lacks sufficient copies.</td></tr>
+              <tr><td><code>RevertLastSwap()</code></td><td>Undoes the most recent swap. Returns <code>false</code> if no swaps have been made.</td></tr>
+              <tr><td><code>RevertAllSwaps()</code></td><td>Resets both the deck and sideboard to their original asset state.</td></tr>
+              <tr><td><code>GetActiveMainDeckEntries()</code></td><td>Snapshot of the current main deck after all applied swaps.</td></tr>
+              <tr><td><code>GetActiveSideboardEntries()</code></td><td>Snapshot of the current sideboard.</td></tr>
+              <tr><td><code>SwapLog</code></td><td>Read-only list of every swap applied this session, most recent last.</td></tr>
+              <tr><td><code>Validate(format)</code></td><td>Full validation — deck size, sideboard size, copy limits, set legality. Returns a combined <code>DeckViolation</code> list.</td></tr>
+              <tr><td><code>PopulateMainDeck(zone, owner, controller, ctx)</code></td><td>Creates <code>CardInstance</code>s from the active main deck and transfers them into the zone. Use in place of <code>DeckDefinition.Populate()</code> when sideboard swaps are active.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-note">
+          <strong>Total card count is preserved:</strong> Every swap exchanges equal numbers of cards, keeping the main deck size constant across swaps. Validation still catches size violations from the original asset or format changes.
+        </div>
+
+        <h2 id="search-effect">SearchEffect — Library Search (Tutor)</h2>
+        <p><code>SearchEffect</code> implements the "search your library for a card" mechanic. It collects eligible cards from the library, fires a <code>LibrarySearchStartedEvent</code> so your UI can present the choice, moves the chosen card to the destination zone, shuffles the library, and fires <code>LibrarySearchCompletedEvent</code>.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — "Search for a creature, put it into your hand"</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// 1. Subscribe to the search event to show UI and record the choice.</span>
+context.EventBus.Subscribe&lt;<span class="token-type">LibrarySearchStartedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-comment">// e.State.Candidates is the filtered list the player can pick from.</span>
+    <span class="token-type">CardInstance</span> chosen = ShowSearchUI(e.State.Candidates, e.State.SearchingPlayer);
+    <span class="token-keyword">if</span> (chosen != <span class="token-keyword">null</span>)
+        e.State.Choose(chosen);
+    <span class="token-keyword">else</span>
+        e.State.ChooseNone();
+});
+
+<span class="token-comment">// 2. Create and execute the effect.</span>
+<span class="token-keyword">var</span> <span class="token-var">search</span> = <span class="token-keyword">new</span> <span class="token-type">SearchEffect</span>(
+    source:      mySource,
+    controller:  activePlayer,
+    library:     playerLibrary,
+    destination: playerHand,
+    filter:      _creatureFilter,     <span class="token-comment">// null = all cards eligible</span>
+    transferTag: _searchTag,          <span class="token-comment">// optional — tags the zone transfer</span>
+    shuffleAfterSearch: <span class="token-keyword">true</span>);       <span class="token-comment">// default: true</span>
+
+<span class="token-keyword">var</span> <span class="token-var">result</span> = search.Execute(context);
+<span class="token-comment">// result.Status == EffectStatus.Success  — card fetched</span>
+<span class="token-comment">// result.Status == EffectStatus.Partial  — searched but nothing chosen</span></code></pre>
+        </div>
+
+        <h3 id="search-state">SearchState</h3>
+        <p>The event carries a <code>SearchState</code> object:</p>
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Candidates</code></td><td>All cards in the library that passed the filter.</td></tr>
+            <tr><td><code>Library</code></td><td>The zone being searched.</td></tr>
+            <tr><td><code>SearchingPlayer</code></td><td>The player performing the search (who can see the cards).</td></tr>
+            <tr><td><code>Choose(card)</code></td><td>Select a card to fetch. Does not need to be in Candidates — the effect validates it is still in the library.</td></tr>
+            <tr><td><code>ChooseNone()</code></td><td>Intentionally find nothing (fail-to-find).</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong> If no subscriber commits a decision, <code>SearchEffect</code> defaults to <code>ChooseNone()</code>. The library is still shuffled. This prevents library-order information leaks even when a search fails.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="win-conditions.html">← Win Conditions</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="ai.html">AI Players →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#deck-definition">DeckDefinition</a>
+          <a href="#populate" class="toc-sub">Populating a library</a>
+          <a href="#mulligan-system">MulliganSystem</a>
+          <a href="#mulligan-setup" class="toc-sub">Setup</a>
+          <a href="#mulligan-state" class="toc-sub">MulliganState</a>
+          <a href="#mulligan-variants" class="toc-sub">Variants</a>
+          <a href="#deck-format">DeckFormatDefinition</a>
+          <a href="#validate" class="toc-sub">Validating a deck</a>
+          <a href="#deck-violation" class="toc-sub">DeckViolation</a>
+          <a href="#sideboard">SideboardDefinition</a>
+          <a href="#between-games">BetweenGamesManager</a>
+          <a href="#between-games-workflow" class="toc-sub">Workflow</a>
+          <a href="#between-games-api" class="toc-sub">API</a>
+          <a href="#search-effect">SearchEffect</a>
+          <a href="#search-state" class="toc-sub">SearchState</a>
+        </nav>
+      </aside>

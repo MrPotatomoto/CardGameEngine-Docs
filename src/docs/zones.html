@@ -1,0 +1,178 @@
+---
+layout: base.njk
+title: "Zones"
+description: "ZoneDefinition, Zone, and ZoneManager reference."
+pageKey: zones
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Zones</div>
+          <h1>Zones</h1>
+          <p class="doc-lead">Ordered card collections — deck, hand, graveyard, battlefield, and beyond.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>A <strong>Zone</strong> is an ordered list of <code>CardInstance</code> objects. Every card in play belongs to exactly one zone at any moment. Zones are defined by ScriptableObject assets (<code>ZoneDefinition</code>) and instantiated at runtime.</p>
+        <p>The <strong>ZoneManager</strong> is the authoritative registry for all zones in a game. Moving a card between zones always goes through <code>ZoneManager.Transfer()</code>, which updates both zones and fires the appropriate events.</p>
+
+        <!-- ── ZoneDefinition ── -->
+        <h2 id="zone-definition">ZoneDefinition</h2>
+        <p>Create via <strong>Right-click → Create → Card Game Engine → Zone Definition</strong>. Configure in the Inspector.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>ZoneName</code></td><td><code>string</code></td><td>Display name ("Deck", "Hand", "Battlefield", etc.).</td></tr>
+              <tr><td><code>DefaultInsertPosition</code></td><td><code>ZoneInsertPosition</code></td><td><code>Top</code> or <code>Bottom</code> — where <code>TryAdd</code> inserts by default.</td></tr>
+              <tr><td><code>IsOrdered</code></td><td><code>bool</code></td><td>If <code>false</code>, the zone is treated as unordered (e.g. battlefield).</td></tr>
+              <tr><td><code>MaxCapacity</code></td><td><code>int</code></td><td><code>0</code> = unlimited. Set a positive value to cap zone size (e.g. hand limit).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Zone ── -->
+        <h2 id="zone">Zone</h2>
+        <p><code>Zone</code> is a runtime plain C# class. Instantiate it with a <code>ZoneDefinition</code> and an optional owner player:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Shared zone (battlefield) — no owner</span>
+<span class="token-keyword">var</span> <span class="token-var">battlefield</span> = <span class="token-keyword">new</span> <span class="token-type">Zone</span>(battlefieldDef, owner: <span class="token-keyword">null</span>);
+
+<span class="token-comment">// Player-owned zone</span>
+<span class="token-keyword">var</span> <span class="token-var">deck</span> = <span class="token-keyword">new</span> <span class="token-type">Zone</span>(deckDef, owner: player1);
+
+<span class="token-comment">// With a seeded RNG (useful for deterministic tests / replays)</span>
+<span class="token-keyword">var</span> <span class="token-var">deck</span> = <span class="token-keyword">new</span> <span class="token-type">Zone</span>(deckDef, owner: player1, rng: <span class="token-keyword">new</span> System.Random(<span class="token-number">42</span>));</code></pre>
+        </div>
+
+        <h3 id="zone-properties">Properties</h3>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Member</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Count</code></td><td><code>int</code></td><td>Number of cards currently in the zone.</td></tr>
+              <tr><td><code>Cards</code></td><td><code>IReadOnlyList&lt;CardInstance&gt;</code></td><td>Ordered list of cards. Index 0 is the "top" for ordered zones.</td></tr>
+              <tr><td><code>Owner</code></td><td><code>Player</code></td><td>Owning player, or <code>null</code> for shared zones.</td></tr>
+              <tr><td><code>Definition</code></td><td><code>ZoneDefinition</code></td><td>The zone's configuration asset.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="zone-methods">Methods</h3>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>TryAdd(card)</code></td><td><code>bool</code></td><td>Adds the card at the default insert position. Returns <code>false</code> if the zone is full or card is already present.</td></tr>
+              <tr><td><code>TryRemove(card)</code></td><td><code>bool</code></td><td>Removes the card. Returns <code>false</code> if not found.</td></tr>
+              <tr><td><code>Contains(card)</code></td><td><code>bool</code></td><td>Checks membership without modifying the zone.</td></tr>
+              <tr><td><code>PeekTop(n)</code></td><td><code>List&lt;CardInstance&gt;</code></td><td>Returns the top <code>n</code> cards (clamped to zone size) without removing them.</td></tr>
+              <tr><td><code>Reorder(newOrder)</code></td><td><code>void</code></td><td>Reorders the zone to match <code>newOrder</code>. Cards missing from the list are appended at the end.</td></tr>
+              <tr><td><code>Shuffle()</code></td><td><code>void</code></td><td>Fisher-Yates shuffle using the zone's <code>System.Random</code> instance.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="peek-and-shuffle">PeekTop &amp; Shuffle examples</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Peek top 3 cards of the deck (non-destructive)</span>
+<span class="token-type">List</span>&lt;<span class="token-type">CardInstance</span>&gt; top3 = deck.PeekTop(<span class="token-number">3</span>);
+
+<span class="token-comment">// Shuffle the deck</span>
+deck.Shuffle();
+
+<span class="token-comment">// Reorder after a Scry decision</span>
+deck.Reorder(<span class="token-keyword">new</span> <span class="token-type">List</span>&lt;<span class="token-type">CardInstance</span>&gt; { c2, c1, c3 });</code></pre>
+        </div>
+
+        <!-- ── ZoneManager ── -->
+        <h2 id="zone-manager">ZoneManager</h2>
+        <p>All zones must be registered with <code>ZoneManager</code> before gameplay begins. The manager tracks zone ownership, handles card transfers, and fires zone events.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Register zones once during game setup</span>
+context.ZoneManager.Register(deck);
+context.ZoneManager.Register(hand);
+context.ZoneManager.Register(battlefield);
+context.ZoneManager.Register(graveyard);
+
+<span class="token-comment">// Transfer a card from hand to battlefield</span>
+<span class="token-comment">// Fires CardLeftZoneEvent (hand) and CardEnteredZoneEvent (battlefield)</span>
+context.ZoneManager.Transfer(card, fromZone: hand, toZone: battlefield);
+
+<span class="token-comment">// Look up a zone by its definition asset</span>
+<span class="token-type">Zone</span> found = context.ZoneManager.GetZone(battlefieldDef, owner: <span class="token-keyword">null</span>);</code></pre>
+        </div>
+
+        <div class="callout callout-warning">
+          <strong>Always use Transfer, never TryAdd/TryRemove directly</strong> when moving cards between zones during gameplay. Direct manipulation bypasses event firing and can leave <code>card.CurrentZone</code> out of sync.
+        </div>
+
+        <!-- ── Events ── -->
+        <h2 id="zone-events">Zone Events</h2>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Event</th><th>Fired when…</th></tr></thead>
+            <tbody>
+              <tr><td><code>CardEnteredZoneEvent</code></td><td>A card is added to a zone via <code>ZoneManager.Transfer()</code>.</td></tr>
+              <tr><td><code>CardLeftZoneEvent</code></td><td>A card is removed from a zone via <code>ZoneManager.Transfer()</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">CardEnteredZoneEvent</span>&gt;(e =&gt;
+{
+    Debug.Log(<span class="token-string">$"{e.Card.Face.CardName} entered {e.Zone.Definition.ZoneName}"</span>);
+});</code></pre>
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="cards.html">← Cards</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="effects.html">Effects →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#zone-definition">ZoneDefinition</a>
+          <a href="#zone">Zone</a>
+          <a href="#zone-properties" class="toc-sub">Properties</a>
+          <a href="#zone-methods" class="toc-sub">Methods</a>
+          <a href="#peek-and-shuffle" class="toc-sub">PeekTop &amp; Shuffle</a>
+          <a href="#zone-manager">ZoneManager</a>
+          <a href="#zone-events">Zone Events</a>
+        </nav>
+      </aside>

@@ -1,0 +1,176 @@
+---
+layout: base.njk
+title: "Combat"
+description: "The CombatManager: attacker and blocker declarations, first strike, trample, and full damage resolution."
+pageKey: combat
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Combat</div>
+          <h1>Combat</h1>
+          <p class="doc-lead">The <code>CombatManager</code> handles attacker declarations, blocker declarations, and multi-step damage resolution including first strike and trample.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p><code>CombatManager</code> is accessed via <code>context.CombatManager</code>. It tracks which cards are attacking or blocking and resolves damage through the <code>ReplacementEffectLayer</code> — so prevention and redirection effects work automatically, exactly as they do for <code>DealDamageEffect</code>.</p>
+
+        <h2 id="setup">Setup</h2>
+        <p>Before using combat, configure the stat assets the manager reads from:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Configuring CombatManager</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Wire up in GameBootstrapper.OnGameSetupComplete (or equivalent)</span>
+<span class="token-keyword">var</span> <span class="token-var">combat</span> = context.CombatManager;
+
+combat.PowerStat        = powerStatDefinition;      <span class="token-comment">// how much damage attackers/blockers deal</span>
+combat.DamageStat       = toughnessStatDefinition;  <span class="token-comment">// what damage is subtracted from</span>
+combat.CombatDamageType = combatDamageType;         <span class="token-comment">// optional — typed damage (e.g. "combat")</span>
+
+<span class="token-comment">// Optional keyword flags (CardStateFlag assets)</span>
+combat.TrampleFlag      = trampleFlag;
+combat.FirstStrikeFlag  = firstStrikeFlag;
+combat.DoubleStrikeFlag = doubleStrikeFlag;</code></pre>
+        </div>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong> <code>CombatManager</code> does not enforce summoning sickness or flying. Plug in <code>CanAttackFilter</code> and <code>CanBlockFilter</code> delegates to add game-specific restrictions without subclassing.
+        </div>
+
+        <h2 id="combat-flow">Combat flow</h2>
+        <p>A typical combat phase runs in five steps:</p>
+
+        <h3 id="declare-attackers">1. Declare attackers</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Declaring attackers</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">if</span> (context.CombatManager.TryDeclareAttacker(goblin, defendingPlayer, <span class="token-keyword">out</span> <span class="token-keyword">var</span> <span class="token-var">reason</span>))
+    Debug.Log(<span class="token-string">"Goblin is attacking!"</span>);
+<span class="token-keyword">else</span>
+    Debug.LogWarning(<span class="token-string">$"Cannot attack: {reason}"</span>);</code></pre>
+        </div>
+        <p>On success, an <code>AttackerDeclaredEvent</code> is published. You can subscribe to this to apply a "tapped while attacking" flag or trigger other effects.</p>
+
+        <h3 id="declare-blockers">2. Declare blockers</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Declaring blockers</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Get the CombatAttacker record for the card being blocked</span>
+<span class="token-keyword">var</span> <span class="token-var">attacker</span> = context.CombatManager.GetAttacker(goblin);
+
+context.CombatManager.TryDeclareBlocker(knight, attacker, <span class="token-keyword">out</span> <span class="token-keyword">var</span> <span class="token-var">reason</span>);</code></pre>
+        </div>
+        <p>Multiple creatures can block the same attacker. Damage is assigned to blockers in the order they were declared.</p>
+
+        <h3 id="first-strike">3. First-strike damage (optional)</h3>
+        <p>Call this step only when at least one attacking or blocking creature has <code>FirstStrikeFlag</code> or <code>DoubleStrikeFlag</code> set. Skip it entirely for simpler games.</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">source</span> = <span class="token-keyword">new</span> <span class="token-type">EffectSource</span>(Guid.NewGuid(), <span class="token-string">"Combat"</span>);
+context.CombatManager.ResolveCombatDamage(source, isFirstStrike: <span class="token-keyword">true</span>);</code></pre>
+        </div>
+
+        <h3 id="normal-damage">4. Normal damage</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.CombatManager.ResolveCombatDamage(source, isFirstStrike: <span class="token-keyword">false</span>);</code></pre>
+        </div>
+
+        <h3 id="end-combat">5. End combat</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.CombatManager.EndCombat(source);
+<span class="token-comment">// Fires CombatEndedEvent. Subscribe here to untap attackers, etc.</span></code></pre>
+        </div>
+
+        <h2 id="trample">Trample</h2>
+        <p>When an attacker has the <code>TrampleFlag</code>, any excess damage beyond what is needed to kill all blockers carries over to the defending player. The manager assigns damage in declaration order, stopping at the lethal amount for each blocker, then sends the remainder to the player.</p>
+
+        <h2 id="restrictions">Attack and block restrictions</h2>
+        <p>Use the filter delegates to implement game rules like summoning sickness or flying without subclassing:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Summoning sickness</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>combat.CanAttackFilter = (attacker, defender, ctx) =&gt;
+{
+    <span class="token-keyword">if</span> (attacker.HasFlag(summoningSicknessFlag))
+        <span class="token-keyword">return</span> <span class="token-string">"This creature has summoning sickness and cannot attack."</span>;
+    <span class="token-keyword">return null</span>; <span class="token-comment">// null = allow</span>
+};
+
+combat.CanBlockFilter = (blocker, attackerRecord, ctx) =&gt;
+{
+    <span class="token-comment">// Flying: only flying creatures can block flying attackers</span>
+    <span class="token-keyword">bool</span> attackerFlying = attackerRecord.Card.HasFlag(flyingFlag);
+    <span class="token-keyword">bool</span> blockerFlying  = blocker.HasFlag(flyingFlag)
+                       || blocker.HasFlag(reachFlag);
+
+    <span class="token-keyword">if</span> (attackerFlying &amp;&amp; !blockerFlying)
+        <span class="token-keyword">return</span> <span class="token-string">"Only flying or reach creatures can block flying attackers."</span>;
+
+    <span class="token-keyword">return null</span>;
+};</code></pre>
+        </div>
+
+        <h2 id="events">Combat events</h2>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>AttackerDeclaredEvent</code></td><td><code>TryDeclareAttacker</code> succeeds.</td></tr>
+            <tr><td><code>AttackerRemovedEvent</code></td><td><code>RemoveAttacker</code> is called.</td></tr>
+            <tr><td><code>BlockerDeclaredEvent</code></td><td><code>TryDeclareBlocker</code> succeeds.</td></tr>
+            <tr><td><code>BlockerRemovedEvent</code></td><td><code>RemoveBlocker</code> is called.</td></tr>
+            <tr><td><code>CombatDamageStepStartedEvent</code></td><td>Start of each damage step.</td></tr>
+            <tr><td><code>CombatDamageStepEndedEvent</code></td><td>End of each damage step.</td></tr>
+            <tr><td><code>CombatEndedEvent</code></td><td><code>EndCombat</code> is called.</td></tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="resources.html">← Resources</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="attachments.html">Attachments →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#setup">Setup</a>
+          <a href="#combat-flow">Combat flow</a>
+          <a href="#declare-attackers" class="toc-sub">1. Declare attackers</a>
+          <a href="#declare-blockers" class="toc-sub">2. Declare blockers</a>
+          <a href="#first-strike" class="toc-sub">3. First-strike damage</a>
+          <a href="#normal-damage" class="toc-sub">4. Normal damage</a>
+          <a href="#end-combat" class="toc-sub">5. End combat</a>
+          <a href="#trample">Trample</a>
+          <a href="#restrictions">Attack &amp; block restrictions</a>
+          <a href="#events">Combat events</a>
+        </nav>
+      </aside>

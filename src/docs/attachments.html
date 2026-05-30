@@ -1,0 +1,141 @@
+---
+layout: base.njk
+title: "Attachments"
+description: "Equipment, auras, and other card-to-card attachments using AttachmentManager, AttachEffect, and DetachEffect."
+pageKey: attachments
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Attachments</div>
+          <h1>Attachments</h1>
+          <p class="doc-lead">Model equipment, auras, and any card-to-card bond with <code>AttachmentManager</code>, <code>AttachEffect</code>, and <code>DetachEffect</code>.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>An <em>attachment</em> is a card that is logically bonded to a <em>host</em> card. Equipment, auras, fortifications — anything where card A modifies card B while both are in play — uses this system.</p>
+        <p><code>AttachmentManager</code> lives at <code>context.AttachmentManager</code>. It keeps two dictionaries: one mapping each attachment to its current host, and one mapping each host to the list of cards attached to it.</p>
+        <p>You never call <code>AttachmentManager</code> directly from game code. Instead, use the provided effects:</p>
+        <ul>
+          <li><code>AttachEffect</code> — attach one card to another.</li>
+          <li><code>DetachEffect</code> — remove an attachment from its host.</li>
+        </ul>
+
+        <h2 id="attaching">Attaching a card</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Equipping a sword to a creature</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">source</span> = <span class="token-keyword">new</span> <span class="token-type">EffectSource</span>(swordCard);
+<span class="token-keyword">var</span> <span class="token-var">attach</span> = <span class="token-keyword">new</span> <span class="token-type">AttachEffect</span>(source, controller, attachment: swordCard, host: goblinCard);
+attach.Execute(context);
+<span class="token-comment">// Fires CardAttachedEvent(source, swordCard, goblinCard)</span></code></pre>
+        </div>
+
+        <p>If the sword is already equipped to a different creature, <code>AttachEffect</code> automatically detaches it from the previous host first — the standard re-equip behaviour.</p>
+
+        <h2 id="detaching">Detaching</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Detaching</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">detach</span> = <span class="token-keyword">new</span> <span class="token-type">DetachEffect</span>(source, controller, swordCard);
+detach.Execute(context);
+<span class="token-comment">// Fires CardDetachedEvent(source, swordCard, previousHost)</span></code></pre>
+        </div>
+
+        <h2 id="querying">Querying attachment state</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">mgr</span> = context.AttachmentManager;
+
+<span class="token-comment">// Is this card equipped to something?</span>
+<span class="token-keyword">bool</span> equipped = mgr.IsAttached(swordCard);
+
+<span class="token-comment">// What is it attached to?</span>
+<span class="token-type">CardInstance</span> host = mgr.GetHost(swordCard);
+
+<span class="token-comment">// What is attached to this creature?</span>
+<span class="token-type">IReadOnlyList</span>&lt;<span class="token-type">CardInstance</span>&gt; gear = mgr.GetAttachments(goblinCard);</code></pre>
+        </div>
+
+        <h2 id="fall-off">Attachment fall-off</h2>
+        <p><code>AttachmentManager</code> does not automatically detach cards when a host moves zones — that is a game-rule concern, not a core mechanism. The engine ships a ready-made state-based action to handle it:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Registering the fall-off SBA</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// attachmentFallOffSBA is a pre-configured AttachmentFallOffSBA ScriptableObject.
+// It checks whether a host is still in an "active" zone (AbilitiesActive = true).
+// If the host has left, it strips all attachments.</span>
+
+context.StateBasedActionManager.Register(attachmentFallOffSBA);</code></pre>
+        </div>
+
+        <p>Create the SBA asset via <strong>Create → Card Game Engine → Rules → Attachment Fall-Off SBA</strong> and set its <em>Active Zone Type</em> to your battlefield zone type. Then register it once at game start. The <code>StateBasedActionManager</code> will call <code>CheckAndResolve()</code> automatically before each priority grant.</p>
+
+        <h2 id="stat-bonuses">Granting stat bonuses</h2>
+        <p>Attachments grant bonuses through the <a href="continuous-effects.html">continuous effect</a> system, not through the attachment relationship directly. When a card is attached, subscribe to <code>CardAttachedEvent</code> and apply a <code>StatModifier</code> continuous effect sourced from the attachment. When it is detached, apply an expiry to that effect.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Pattern: equipment grants +2 Power</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>context.EventBus.Subscribe&lt;<span class="token-type">CardAttachedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-keyword">if</span> (e.Attachment != swordCard) <span class="token-keyword">return</span>;
+
+    <span class="token-keyword">var</span> <span class="token-var">modifier</span> = <span class="token-keyword">new</span> <span class="token-type">StatModifier</span>(powerDef, <span class="token-number">2</span>, e.Source,
+        expiresWhen: <span class="token-type">ExpiryReason</span>.SourceLeavesBattlefield);
+    context.ContinuousEffectManager.Apply(modifier, e.Host);
+});
+
+context.EventBus.Subscribe&lt;<span class="token-type">CardDetachedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-keyword">if</span> (e.Attachment != swordCard) <span class="token-keyword">return</span>;
+    context.ContinuousEffectManager.ExpireFromSource(swordCard);
+});</code></pre>
+        </div>
+
+        <h2 id="events">Events</h2>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>When</th><th>Key fields</th></tr></thead>
+          <tbody>
+            <tr><td><code>CardAttachedEvent</code></td><td>Successful attachment.</td><td><code>Attachment</code>, <code>Host</code></td></tr>
+            <tr><td><code>CardDetachedEvent</code></td><td>Successful detachment.</td><td><code>Attachment</code>, <code>PreviousHost</code></td></tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="combat.html">← Combat</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="player-stats.html">Player Stats →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#attaching">Attaching a card</a>
+          <a href="#detaching">Detaching</a>
+          <a href="#querying">Querying state</a>
+          <a href="#fall-off">Attachment fall-off</a>
+          <a href="#stat-bonuses">Granting stat bonuses</a>
+          <a href="#events">Events</a>
+        </nav>
+      </aside>

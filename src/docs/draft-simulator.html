@@ -1,0 +1,112 @@
+---
+layout: base.njk
+title: "Draft"
+description: "Define booster pack slot rules and simulate sealed pools or draft events in the Unity Editor using BoosterPackDefinition and the Draft Simulator window."
+pageKey: draft-simulator
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Draft &amp; Booster</div>
+          <h1>Draft &amp; Booster System</h1>
+          <p class="doc-lead">Define booster pack slot rules as ScriptableObjects and simulate sealed-pool events in the Unity Editor. Randomly generated pools can be exported as DeckDefinition assets for immediate use.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The draft and booster system has two data assets and one editor window:</p>
+        <ul>
+          <li><strong>BoosterPackDefinition</strong> — defines the slot composition of a single pack. Each slot specifies a pool of eligible <code>CardTemplate</code> assets, a count, an optional rarity filter, and whether duplicates are allowed within that slot.</li>
+          <li><strong>DraftConfig</strong> — configures an event: which pack, how many players, packs per player, and sealed vs. draft mode.</li>
+          <li><strong>Draft Simulator window</strong> — generates and previews packs or sealed pools entirely in the Editor. Supports fixed-seed generation for repeatable results and exports any pool as a new <code>DeckDefinition</code>.</li>
+        </ul>
+
+        <h2 id="booster-pack">BoosterPackDefinition</h2>
+        <p>Create via <em>Card Game Engine → Draft → Booster Pack</em>. Add one <code>BoosterSlotRule</code> per rarity band in the <strong>Slots</strong> array.</p>
+
+        <h3>Slot rule fields</h3>
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Label</code></td><td>string</td><td>Display name for this slot, e.g. "Commons" or "Rare/Mythic".</td></tr>
+            <tr><td><code>Pool</code></td><td>CardTemplate[]</td><td>All cards eligible for this slot. Drag <code>CardTemplate</code> assets here.</td></tr>
+            <tr><td><code>Count</code></td><td>int</td><td>How many cards to draw from this pool per pack.</td></tr>
+            <tr><td><code>RarityFilter</code></td><td>RarityDefinition</td><td>Optional. When set, only cards whose default face has this rarity are eligible.</td></tr>
+            <tr><td><code>AllowDuplicates</code></td><td>bool</td><td>When false (default), the same card cannot appear more than once in this slot per pack. When true, sampling is with replacement.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+          <strong>Example — 15-card booster:</strong><br>
+          Slot 0: Label = "Commons", Count = 10, AllowDuplicates = false<br>
+          Slot 1: Label = "Uncommons", Count = 3, AllowDuplicates = false<br>
+          Slot 2: Label = "Rare/Mythic", Count = 1, AllowDuplicates = false<br>
+          Slot 3: Label = "Basic Land", Count = 1, AllowDuplicates = true
+        </div>
+
+        <h3>Inspector</h3>
+        <p>The custom inspector shows a header with the pack name and nominal card count, a color-coded slot grid listing each slot's pool size, rarity filter, and count, and any validation warnings (empty pool, pool smaller than count). An <em>Open in Draft Simulator</em> button jumps straight to the window with this pack loaded.</p>
+
+        <h3>Runtime API</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Generate one pack with a seeded RNG for deterministic results
+var rng  = new System.Random(seed: 42);
+CardTemplate[] pack = packDef.GeneratePack(rng);
+
+// Generate 6 packs in sequence (for a sealed pool)
+CardTemplate[][] sixPacks = packDef.GeneratePacks(6, rng);
+
+// Validate before use
+List&lt;string&gt; warnings = packDef.Validate();
+foreach (var w in warnings) Debug.LogWarning(w);</code></pre>
+        </div>
+
+        <h2 id="draft-config">DraftConfig</h2>
+        <p>Create via <em>Card Game Engine → Draft → Draft Config</em>. Pair with a <code>BoosterPackDefinition</code> to configure an event.</p>
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>PackDefinition</code></td><td>—</td><td>The booster pack to generate packs from.</td></tr>
+            <tr><td><code>PlayerCount</code></td><td>8</td><td>Number of players at the table (1–12).</td></tr>
+            <tr><td><code>PacksPerPlayer</code></td><td>3</td><td>Packs each player opens over the event.</td></tr>
+            <tr><td><code>SealedFormat</code></td><td>false</td><td>When true, packs are not passed — each player builds from their own pool only.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="simulator">Draft Simulator window</h2>
+        <p>Open via <em>Window → Card Game Engine → Draft Simulator</em>.</p>
+
+        <h3>Pack Preview mode</h3>
+        <p>Assign a <code>BoosterPackDefinition</code> and click <strong>New Pack</strong> to generate a single randomized pack. The card list shows name, type line, rarity, and set code. Click any card row to ping its asset in the Project window.</p>
+
+        <h3>Sealed Pool mode</h3>
+        <p>Assign a <code>DraftConfig</code> (or set a pack, player count, and packs per player manually), then click <strong>Regenerate All</strong>. Each player's pool appears on a separate tab labeled P1, P2, etc. with the total card count.</p>
+
+        <h3>Fixed seed</h3>
+        <p>Enable the <strong>Fixed seed</strong> toggle in the toolbar and enter an integer seed. All generation uses a <code>System.Random</code> seeded with that value, producing identical results every time — useful for testing balance, reproducing reported pools, and documenting specific pack distributions.</p>
+
+        <h3>Exporting a pool</h3>
+        <p>In Sealed Pool mode, click <strong>Export Player N Pool as Deck</strong> to save the selected player's cards as a <code>DeckDefinition</code> asset. Cards are grouped by template so the entry count reflects how many copies of each card appeared. The asset opens selected in the Inspector.</p>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="node-graph-editor.html">← Node Graph Editor</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="replay-viewer.html">Replay Viewer →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#booster-pack">BoosterPackDefinition</a>
+          <a href="#draft-config">DraftConfig</a>
+          <a href="#simulator">Draft Simulator window</a>
+        </nav>
+      </aside>

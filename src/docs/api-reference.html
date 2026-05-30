@@ -1,0 +1,207 @@
+---
+layout: base.njk
+title: "API Reference"
+description: "Complete API reference for Card Game Engine v1."
+pageKey: api-reference
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / API Reference</div>
+          <h1>API Reference</h1>
+          <p class="doc-lead">Complete listing of all public types in <code>CardGameEngine</code> v1.</p>
+        </div>
+
+        <!-- ── GameContext ── -->
+        <h2 id="game-context">GameContext</h2>
+        <p>The root object for a game session. Pass it to every effect. Does not inherit from <code>MonoBehaviour</code>.</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Member</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>ZoneManager</code></td><td><code>ZoneManager</code></td><td>Registry for all zones. Handles zone lookup and card transfers.</td></tr>
+              <tr><td><code>EventBus</code></td><td><code>EventBus</code></td><td>Typed pub/sub event dispatcher.</td></tr>
+              <tr><td><code>ContinuousEffectManager</code></td><td><code>ContinuousEffectManager</code></td><td>Manages active continuous effects and computes card states.</td></tr>
+              <tr><td><code>ReplacementEffectLayer</code></td><td><code>ReplacementEffectLayer</code></td><td>Intercept and replace events before resolution.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Cards ── -->
+        <h2 id="api-cards">Cards</h2>
+
+        <h3 id="api-card-definition">CardDefinition</h3>
+        <div class="api-sig"><code>ScriptableObject</code></div>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Property</th><th>Type</th></tr></thead>
+            <tbody>
+              <tr><td><code>CardName</code></td><td><code>string</code></td></tr>
+              <tr><td><code>Types</code></td><td><code>CardType[]</code></td></tr>
+              <tr><td><code>Subtypes</code></td><td><code>CardSubtype[]</code></td></tr>
+              <tr><td><code>Supertypes</code></td><td><code>CardSupertype[]</code></td></tr>
+              <tr><td><code>Stats</code></td><td><code>StatEntry[]</code></td></tr>
+              <tr><td><code>Abilities</code></td><td><code>IntrinsicAbility[]</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="api-card-template">CardTemplate</h3>
+        <div class="api-sig"><code>ScriptableObject</code></div>
+        <p>Holds one or more <code>CardDefinition</code> faces. Subclassed by <code>TokenDefinition</code>.</p>
+
+        <h3 id="api-card-instance">CardInstance</h3>
+        <div class="api-sig"><code>class CardInstance</code></div>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Member</th><th>Kind</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>ObjectId</code></td><td>prop</td><td><code>Guid</code></td><td>Unique instance identifier.</td></tr>
+              <tr><td><code>Template</code></td><td>prop</td><td><code>CardTemplate</code></td><td>Source asset.</td></tr>
+              <tr><td><code>Face</code></td><td>prop</td><td><code>CardDefinition</code></td><td>Active face.</td></tr>
+              <tr><td><code>Owner</code></td><td>prop</td><td><code>Player</code></td><td>Card owner.</td></tr>
+              <tr><td><code>Controller</code></td><td>prop</td><td><code>Player</code></td><td>Card controller.</td></tr>
+              <tr><td><code>CurrentZone</code></td><td>prop</td><td><code>Zone</code></td><td>Zone the card is in.</td></tr>
+              <tr><td><code>IsToken</code></td><td>prop</td><td><code>bool</code></td><td>True if template is <code>TokenDefinition</code>.</td></tr>
+              <tr><td><code>AddCounters(type, n)</code></td><td>method</td><td><code>void</code></td><td>Add N counters of a type.</td></tr>
+              <tr><td><code>RemoveCounters(type, n)</code></td><td>method</td><td><code>bool</code></td><td>Remove N counters. Returns false if insufficient.</td></tr>
+              <tr><td><code>GetCounters(type)</code></td><td>method</td><td><code>int</code></td><td>Current count for a counter type.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Zones ── -->
+        <h2 id="api-zones">Zones</h2>
+
+        <h3 id="api-zone">Zone</h3>
+        <div class="api-sig"><code>class Zone</code></div>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Member</th><th>Kind</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Count</code></td><td>prop</td><td><code>int</code></td><td>Number of cards.</td></tr>
+              <tr><td><code>Cards</code></td><td>prop</td><td><code>IReadOnlyList&lt;CardInstance&gt;</code></td><td>Ordered card list.</td></tr>
+              <tr><td><code>Owner</code></td><td>prop</td><td><code>Player</code></td><td>Owning player or null.</td></tr>
+              <tr><td><code>TryAdd(card)</code></td><td>method</td><td><code>bool</code></td><td>Add card; false if full/duplicate.</td></tr>
+              <tr><td><code>TryRemove(card)</code></td><td>method</td><td><code>bool</code></td><td>Remove card; false if not found.</td></tr>
+              <tr><td><code>Contains(card)</code></td><td>method</td><td><code>bool</code></td><td>Membership check.</td></tr>
+              <tr><td><code>PeekTop(n)</code></td><td>method</td><td><code>List&lt;CardInstance&gt;</code></td><td>Non-destructive peek.</td></tr>
+              <tr><td><code>Reorder(list)</code></td><td>method</td><td><code>void</code></td><td>Reorder; missing cards appended.</td></tr>
+              <tr><td><code>Shuffle()</code></td><td>method</td><td><code>void</code></td><td>Fisher-Yates shuffle.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="api-zone-manager">ZoneManager</h3>
+        <div class="api-sig"><code>class ZoneManager</code></div>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Register(zone)</code></td><td><code>void</code></td><td>Add a zone to the registry.</td></tr>
+              <tr><td><code>Transfer(card, from, to)</code></td><td><code>void</code></td><td>Move a card between zones; fires events.</td></tr>
+              <tr><td><code>GetZone(def, owner)</code></td><td><code>Zone</code></td><td>Look up a zone by definition and owner.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Effects ── -->
+        <h2 id="api-effects">Effects</h2>
+
+        <h3 id="api-ieffect">IEffect</h3>
+        <div class="api-sig"><code>EffectResult Execute(GameContext context)</code></div>
+
+        <h3 id="api-effect-base">EffectBase</h3>
+        <div class="api-sig"><code>abstract class EffectBase : IEffect</code></div>
+        <p>Exposes <code>Source</code> (<code>EffectSource</code>) and <code>Controller</code> (<code>Player</code>).</p>
+
+        <h3 id="api-effect-result">EffectResult / EffectStatus</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>Success</code></td><td>Resolved normally.</td></tr>
+              <tr><td><code>Fizzled</code></td><td>No valid target; silently does nothing.</td></tr>
+              <tr><td><code>Invalid</code></td><td>Precondition failed.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Events ── -->
+        <h2 id="api-events">Events</h2>
+
+        <h3 id="api-event-bus">EventBus</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Method</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Subscribe&lt;T&gt;(handler)</code></td><td>Register a typed event handler. Returns <code>IDisposable</code>.</td></tr>
+              <tr><td><code>Publish&lt;T&gt;(event)</code></td><td>Dispatch event to all registered handlers.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Continuous ── -->
+        <h2 id="api-continuous">Continuous Effects</h2>
+
+        <h3 id="api-continuous-manager">ContinuousEffectManager</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Method</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>Register(effect)</code></td><td>Add a continuous effect.</td></tr>
+              <tr><td><code>Remove(effect)</code></td><td>Remove a specific effect.</td></tr>
+              <tr><td><code>ComputeState(card)</code></td><td>Returns a <code>CardState</code> with all modifiers applied.</td></tr>
+              <tr><td><code>ExpireEffects(reason)</code></td><td>Remove all effects with the given expiry reason.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="api-effect-layer">EffectLayer enum</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Value</th><th>Int</th></tr></thead>
+            <tbody>
+              <tr><td><code>Copy</code></td><td>0</td></tr>
+              <tr><td><code>Control</code></td><td>1</td></tr>
+              <tr><td><code>TypeChanging</code></td><td>2</td></tr>
+              <tr><td><code>ColorChanging</code></td><td>3</td></tr>
+              <tr><td><code>AbilityAdding</code></td><td>4</td></tr>
+              <tr><td><code>PowerToughnessSet</code></td><td>5</td></tr>
+              <tr><td><code>PowerToughnessModify</code></td><td>6</td></tr>
+              <tr><td><code>CounterStats</code></td><td>7</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="replay-viewer.html">← Replay Viewer</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#game-context">GameContext</a>
+          <a href="#api-cards">Cards</a>
+          <a href="#api-card-definition" class="toc-sub">CardDefinition</a>
+          <a href="#api-card-template" class="toc-sub">CardTemplate</a>
+          <a href="#api-card-instance" class="toc-sub">CardInstance</a>
+          <a href="#api-zones">Zones</a>
+          <a href="#api-zone" class="toc-sub">Zone</a>
+          <a href="#api-zone-manager" class="toc-sub">ZoneManager</a>
+          <a href="#api-effects">Effects</a>
+          <a href="#api-ieffect" class="toc-sub">IEffect</a>
+          <a href="#api-effect-result" class="toc-sub">EffectResult</a>
+          <a href="#api-events">Events</a>
+          <a href="#api-event-bus" class="toc-sub">EventBus</a>
+          <a href="#api-continuous">Continuous Effects</a>
+          <a href="#api-effect-layer" class="toc-sub">EffectLayer</a>
+        </nav>
+      </aside>

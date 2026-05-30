@@ -1,0 +1,148 @@
+---
+layout: base.njk
+title: "Asset Registry"
+description: "Auto-populate a GameAssetRegistry ScriptableObject with all project assets and use it as an IGameAssetResolver for serialization restore and undo support."
+pageKey: asset-registry
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Asset Registry</div>
+          <h1>Asset Registry</h1>
+          <p class="doc-lead">A ScriptableObject registry that maps named identifiers back to their ScriptableObject assets at runtime — required for <a href="serialization.html">serialization restore</a> and <a href="undo.html">undo support</a>.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>When a game snapshot is serialized, references to ScriptableObject assets (card templates, stat definitions, zone definitions, etc.) are stored as plain string identifiers. On restore, the engine needs to look up the live asset for each identifier — that lookup is the job of an <code>IGameAssetResolver</code>.</p>
+        <p><code>GameAssetRegistry</code> is the built-in implementation. It holds serialized arrays of every asset type and builds lazy dictionaries on first access for O(1) lookups. The editor tool <code>GameAssetRegistryGenerator</code> auto-populates those arrays from the project in one click.</p>
+
+        <h2 id="creating">Creating a registry</h2>
+        <ol>
+          <li>In the Project window, <strong>right-click → Create → Card Game Engine → Game Asset Registry</strong>.</li>
+          <li>Name the asset (e.g. <em>MyGameRegistry</em>) and save it in your project.</li>
+          <li>Select it and run <strong>Card Game Engine → Generate Asset Registry</strong> from the menu bar.</li>
+        </ol>
+        <p>The generator scans the entire project, finds all assets of each registered type, and writes them into the registry's arrays. A summary dialog confirms the counts after completion.</p>
+
+        <div class="callout callout-note">
+          <strong>Re-run after changes.</strong> Any time you add, rename, or delete a <code>CardTemplate</code>, <code>StatDefinition</code>, <code>ZoneDefinition</code>, or other registered asset, select the registry and run the generator again to keep it up to date.
+        </div>
+
+        <h2 id="generator">The generator tool</h2>
+        <p>Located at <strong>Card Game Engine → Generate Asset Registry</strong>. The menu item is greyed out when no <code>GameAssetRegistry</code> is selected in the Project window.</p>
+
+        <p>The tool:</p>
+        <ol>
+          <li>Scans the whole project with <code>AssetDatabase.FindAssets</code> for each of the seven registered types.</li>
+          <li>Sorts results deterministically by their key property (e.g. <code>TemplateId</code> for <code>CardTemplate</code>) so the array order is stable across regenerations.</li>
+          <li>Writes all arrays into the selected registry via <code>SerializedObject</code>.</li>
+          <li>Calls <code>registry.InvalidateCaches()</code>, marks the asset dirty, and saves.</li>
+        </ol>
+
+        <h2 id="registered-types">Registered asset types</h2>
+        <table>
+          <thead><tr><th>Asset type</th><th>Key property</th><th>Resolver method</th></tr></thead>
+          <tbody>
+            <tr><td><code>CardTemplate</code></td><td><code>TemplateId</code></td><td><code>ResolveTemplate(templateId)</code></td></tr>
+            <tr><td><code>StatDefinition</code></td><td><code>StatName</code></td><td><code>ResolveStat(statName)</code></td></tr>
+            <tr><td><code>CounterType</code></td><td><code>CounterName</code></td><td><code>ResolveCounterType(counterName)</code></td></tr>
+            <tr><td><code>CardStateFlag</code></td><td><code>FlagName</code></td><td><code>ResolveFlag(flagName)</code></td></tr>
+            <tr><td><code>ZoneDefinition</code></td><td><code>ZoneName</code></td><td><code>ResolveZone(zoneName)</code></td></tr>
+            <tr><td><code>ResourceType</code></td><td><code>ResourceName</code></td><td><code>ResolveResourceType(resourceName)</code></td></tr>
+            <tr><td><code>ResourceSubtype</code></td><td><code>SubtypeName</code></td><td><code>ResolveResourceSubtype(subtypeName)</code></td></tr>
+          </tbody>
+        </table>
+
+        <p>All resolve methods return <code>null</code> (never throw) when an asset cannot be found. A descriptive warning is logged so you can diagnose missing assets without a crash.</p>
+
+        <h2 id="wire-up">Wiring up for undo and serialization</h2>
+        <p>Pass the registry to <code>GameSerializer.Restore</code> or return it from <code>GameBootstrapper.GetAssetResolver()</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Custom bootstrapper with undo + registry</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">public class</span> <span class="token-type">MyBootstrapper</span> : <span class="token-type">GameBootstrapper</span>
+{
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">GameAssetRegistry</span> _registry;
+
+    <span class="token-comment">// Supply the registry — enables UndoLastAction()</span>
+    <span class="token-keyword">protected override</span> <span class="token-type">IGameAssetResolver</span> GetAssetResolver() =&gt; _registry;
+
+    <span class="token-comment">// Use UndoableGameStateMachine to enable checkpointing</span>
+    <span class="token-keyword">protected override</span> <span class="token-type">GameStateMachine</span> CreateStateMachine(
+        <span class="token-type">TurnStructureDefinition</span> ts,
+        <span class="token-type">IReadOnlyList</span>&lt;<span class="token-type">Player</span>&gt; players,
+        <span class="token-type">GameContext</span> ctx)
+    {
+        <span class="token-keyword">return new</span> <span class="token-type">UndoableGameStateMachine</span>(ts, players, ctx,
+                                            ctx.CheckpointManager);
+    }
+
+    <span class="token-comment">// Wire a keyboard shortcut to undo</span>
+    <span class="token-keyword">private void</span> Update()
+    {
+        <span class="token-keyword">if</span> (Input.GetKeyDown(KeyCode.Z) &amp;&amp; Input.GetKey(KeyCode.LeftControl))
+            UndoLastAction();
+    }
+}</code></pre>
+        </div>
+
+        <p>Direct serialization restore — for loading a saved game from JSON:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Loading a saved game snapshot</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">string</span> json     = File.ReadAllText(savePath);
+<span class="token-keyword">var</span> <span class="token-var">snapshot</span>   = <span class="token-type">GameSerializer</span>.Capture(context);  <span class="token-comment">// or deserialize from json</span>
+<span class="token-keyword">var</span> <span class="token-var">restored</span>   = <span class="token-type">GameSerializer</span>.Restore(snapshot, registry);</code></pre>
+        </div>
+
+        <h2 id="duplicate-keys">Duplicate key handling</h2>
+        <p>If two assets of the same type share the same key (e.g. two <code>CardTemplate</code> assets both have <code>TemplateId = "Fireball"</code>), the registry logs a warning at cache-build time and keeps the first asset found in the sorted array. The second asset is unreachable via the resolver.</p>
+        <p>Fix duplicate keys by giving each asset a unique identifier in its Inspector fields. Key properties like <code>TemplateId</code>, <code>StatName</code>, and <code>ZoneName</code> are set on the asset itself, not derived from the file name.</p>
+
+        <h2 id="cache">Cache lifecycle</h2>
+        <p>Dictionaries are built lazily on the first resolve call and cleared on:</p>
+        <ul>
+          <li><strong>Domain reload</strong> — <code>OnEnable()</code> is called after every domain reload (Editor play-mode enter, script recompile) which calls <code>InvalidateCaches()</code> automatically.</li>
+          <li><strong>Manual call</strong> — call <code>registry.InvalidateCaches()</code> any time you modify the serialized arrays at runtime (uncommon outside of tests).</li>
+          <li><strong>Generator run</strong> — the generator always calls <code>InvalidateCaches()</code> after repopulating the arrays.</li>
+        </ul>
+
+        <h2 id="manual">Manual population</h2>
+        <p>The generator is the recommended approach, but you can also populate the registry manually: select the asset in the Inspector and drag assets into the appropriate array slots. This is useful when you want to limit the resolver scope to a specific subset of project assets (e.g. only the cards in one game mode).</p>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> You can maintain multiple registry assets — one per game mode or expansion set — and swap which one is passed to <code>GetAssetResolver()</code> depending on which variant is being loaded.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="no-code-setup.html">← No-Code Setup</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="serialization.html">Serialization →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#creating">Creating a registry</a>
+          <a href="#generator">Generator tool</a>
+          <a href="#registered-types">Registered types</a>
+          <a href="#wire-up">Wiring up</a>
+          <a href="#duplicate-keys">Duplicate keys</a>
+          <a href="#cache">Cache lifecycle</a>
+          <a href="#manual">Manual population</a>
+        </nav>
+      </aside>

@@ -1,0 +1,131 @@
+---
+layout: base.njk
+title: "Serialization"
+description: "Save and restore complete game state with GameSerializer and GameSnapshot. Record and replay game action logs with ReplayLogger."
+pageKey: serialization
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Serialization</div>
+          <h1>Serialization</h1>
+          <p class="doc-lead">Save and restore complete game state with <code>GameSerializer</code> and <code>GameSnapshot</code>. Record a log of every game event for replay with <code>ReplayLogger</code>.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Card Game Engine includes two complementary persistence tools:</p>
+        <ul>
+          <li><strong>GameSerializer</strong> — captures a complete point-in-time snapshot of zone contents, card state, player stats, resources, and turn metadata. Can be round-tripped to/from JSON. Used for save games, server sync, and the <a href="undo.html">undo/checkpoint system</a>.</li>
+          <li><strong>ReplayLogger</strong> — records every event published through the <code>ReplacementEffectLayer</code> as an ordered log. Use it to reconstruct what happened during a game for review, analytics, or bug reports.</li>
+        </ul>
+
+        <h2 id="game-snapshot">GameSnapshot</h2>
+        <p>A <code>GameSnapshot</code> is a plain serializable C# object. It contains:</p>
+        <ul>
+          <li><strong>Metadata</strong> — capture timestamp, turn number, active player index, priority player index.</li>
+          <li><strong>Player names</strong> — ordered list used for validation during restore.</li>
+          <li><strong>Zone snapshots</strong> — one per registered zone; each contains the ordered list of <code>CardInstanceSnapshot</code> records (template ID, stats, counters, tapped state, face index, active flags).</li>
+          <li><strong>Stack entries</strong> — informational only; live effects cannot be reconstructed generically.</li>
+          <li><strong>Resource pools</strong> — all player resource pool amounts.</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <strong>Note:</strong> Stack entries are captured for debugging and replay logs, but are <em>not restored</em>. Take snapshots between priority windows (when the stack is empty) for fully restorable saves.
+        </div>
+
+        <h2 id="capturing">Capturing a snapshot</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Saving game state</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">snapshot</span> = <span class="token-type">GameSerializer</span>.Capture(context, players);
+<span class="token-keyword">string</span> json    = <span class="token-type">GameSerializer</span>.ToJson(snapshot);
+
+<span class="token-comment">// Write to disk, send to server, etc.</span>
+File.WriteAllText(<span class="token-string">"save.json"</span>, json);</code></pre>
+        </div>
+
+        <h2 id="restoring">Restoring from a snapshot</h2>
+        <p>Restoring requires an <code>IGameAssetResolver</code> — an interface you implement that maps the string IDs in the snapshot back to your game's <code>ScriptableObject</code> assets. Typical implementation: look up assets by name in a pre-built dictionary.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Loading game state</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">string</span> json     = File.ReadAllText(<span class="token-string">"save.json"</span>);
+<span class="token-keyword">var</span> <span class="token-var">snapshot</span> = <span class="token-type">GameSerializer</span>.FromJson(json);
+
+<span class="token-comment">// resolver maps string IDs back to SO assets</span>
+<span class="token-type">IGameAssetResolver</span> resolver = <span class="token-keyword">new</span> <span class="token-type">MyAssetResolver</span>();
+
+<span class="token-type">GameSerializer</span>.Restore(snapshot, context, players, resolver);
+<span class="token-comment">// Zones are cleared and repopulated; turn/priority state is restored.</span></code></pre>
+        </div>
+
+        <h3 id="asset-resolver">Implementing IGameAssetResolver</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Minimal resolver</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">public class</span> <span class="token-type">MyAssetResolver</span> : <span class="token-type">IGameAssetResolver</span>
+{
+    <span class="token-keyword">private readonly</span> Dictionary&lt;<span class="token-keyword">string</span>, <span class="token-type">CardTemplate</span>&gt;     _templates;
+    <span class="token-keyword">private readonly</span> Dictionary&lt;<span class="token-keyword">string</span>, <span class="token-type">StatDefinition</span>&gt;    _stats;
+    <span class="token-keyword">private readonly</span> Dictionary&lt;<span class="token-keyword">string</span>, <span class="token-type">CounterType</span>&gt;       _counters;
+    <span class="token-comment">// ... other lookups</span>
+
+    <span class="token-keyword">public</span> <span class="token-type">CardTemplate</span>  ResolveTemplate(<span class="token-keyword">string</span> id)     =&gt; _templates.GetValueOrDefault(id);
+    <span class="token-keyword">public</span> <span class="token-type">StatDefinition</span> ResolveStat(<span class="token-keyword">string</span> name)      =&gt; _stats.GetValueOrDefault(name);
+    <span class="token-keyword">public</span> <span class="token-type">CounterType</span>   ResolveCounterType(<span class="token-keyword">string</span> name) =&gt; _counters.GetValueOrDefault(name);
+    <span class="token-comment">// ... implement ResolveStat, ResolveFlag, ResolveZone, etc.</span>
+}</code></pre>
+        </div>
+
+        <h2 id="replay-logger">ReplayLogger</h2>
+        <p><code>ReplayLogger</code> subscribes to the <code>ReplacementEffectLayer</code> and records every event that passes through it as a timestamped log entry in a <code>GameReplayLog</code>. The log can be serialized to JSON alongside the initial snapshot to produce a complete replay file.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Recording a game</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Start logging at game begin</span>
+<span class="token-keyword">var</span> <span class="token-var">logger</span> = <span class="token-keyword">new</span> <span class="token-type">ReplayLogger</span>(context);
+logger.StartRecording();
+
+<span class="token-comment">// ... game plays out ...</span>
+
+<span class="token-comment">// At game end, capture the log</span>
+logger.StopRecording();
+<span class="token-keyword">var</span> <span class="token-var">log</span>  = logger.GetLog();
+<span class="token-keyword">string</span> json = <span class="token-type">GameSerializer</span>.ToJson(log);
+File.WriteAllText(<span class="token-string">"replay.json"</span>, json);</code></pre>
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="asset-registry.html">← Asset Registry</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="undo.html">Undo &amp; Checkpoints →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#game-snapshot">GameSnapshot</a>
+          <a href="#capturing">Capturing a snapshot</a>
+          <a href="#restoring">Restoring</a>
+          <a href="#asset-resolver" class="toc-sub">IGameAssetResolver</a>
+          <a href="#replay-logger">ReplayLogger</a>
+        </nav>
+      </aside>

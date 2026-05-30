@@ -1,0 +1,209 @@
+---
+layout: base.njk
+title: "Editor Tools"
+description: "Custom inspectors, the Card Preview window, and library generators built into Card Game Engine. Design cards and configure systems without leaving the Unity Inspector."
+pageKey: editor-tools
+---
+<article class="docs-content">
+        <div class="page-header">
+          <div class="page-header-meta">Tools</div>
+          <h1>Editor Tools</h1>
+          <p class="page-subtitle">Custom inspectors, the Card Preview window, and library generators — all the tooling built into the engine for designing cards and configuring systems without leaving the Unity Editor.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Card Game Engine ships a full suite of editor tooling that activates automatically when you open any engine asset in the Inspector. There is nothing to configure — custom inspectors replace the default Unity view for every engine ScriptableObject the moment the package is imported.</p>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>Custom Inspectors</h3>
+            <p>Every core asset has a custom inspector that shows an at-a-glance summary: artwork, type lines, range bars, colour swatches, flag chips, and validation warnings.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🃏</div>
+            <h3>Card Preview</h3>
+            <p>A floating window that renders a styled card frame — name, art, type line, rules text, keyword pills, stats — for any selected <code>CardTemplate</code> or <code>CardDefinition</code>.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Library Generators</h3>
+            <p>One-click tools that scan the project and auto-populate <code>KeywordLibrary</code> and <code>GameAssetRegistry</code> assets from all matching assets in the project.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">✓</div>
+            <h3>Inline Validation</h3>
+            <p>Every inspector surfaces configuration errors — missing references, impossible bounds, empty names — as <code>HelpBox</code> warnings before you run the game.</p>
+          </div>
+        </div>
+
+        <h2 id="card-preview">Card Preview window</h2>
+        <p>Open via <strong>Window → Card Game Engine → Card Preview</strong>. The window docks anywhere in the Unity layout and stays open across Play Mode sessions.</p>
+
+        <p>Select any <code>CardTemplate</code> or <code>CardDefinition</code> in the Project window — the preview updates automatically. For multi-face templates, use the <strong>◀ / ▶</strong> toolbar buttons to cycle between faces.</p>
+
+        <table>
+          <thead><tr><th>Region</th><th>Content</th></tr></thead>
+          <tbody>
+            <tr><td>Name band</td><td>Card name in bold against a dark strip</td></tr>
+            <tr><td>Art area</td><td>Sprite artwork scaled to fit, or a greyed placeholder</td></tr>
+            <tr><td>Type band</td><td>Supertype · Type — Subtype line</td></tr>
+            <tr><td>Text box</td><td>Rules text, keyword pills <code>[Flying] [Reach]</code>, italic flavor text</td></tr>
+            <tr><td>Stat strip</td><td>Abbreviation + value for each stat, right-aligned</td></tr>
+            <tr><td>Footer</td><td>Template ID and layout type (shown when a <code>CardTemplate</code> is selected)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> Dock the Card Preview beside the Project window. As you click through <code>CardTemplate</code> assets, the preview updates instantly — no need to open each asset's Inspector to read what a card does.
+        </div>
+
+        <h2 id="inspectors">Custom inspectors</h2>
+        <p>Every inspector follows the same pattern: a read-only summary panel at the top, inline validation below it, then the standard serialized-field inspector for editing. The summary refreshes automatically as fields change.</p>
+
+        <table>
+          <thead><tr><th>Asset</th><th>Inspector highlights</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>CardTemplate</code></td>
+              <td>Per-face foldouts with artwork thumbnail, type line, keyword pills, stats, and ability counts. Select button pings the <code>CardDefinition</code> asset. Validation for missing ID, layout, or null faces.</td>
+            </tr>
+            <tr>
+              <td><code>CardDefinition</code></td>
+              <td>Artwork thumbnail, card name, type line, rarity/set badge, rules text, flavor text, stats + ability count bar.</td>
+            </tr>
+            <tr>
+              <td><code>DeckDefinition</code></td>
+              <td>Aggregated deck list with copy-count badges (amber at ≥4), total card count footer, inline format validation panel with a <code>DeckFormatDefinition</code> picker and Validate Now button.</td>
+            </tr>
+            <tr>
+              <td><code>GameDefinition</code></td>
+              <td>Setup checklist with ✓ / ⚠ / ✗ status rows for every required field: turn structure, stack zone, per-player zones, library and hand zones, players, win conditions, SBAs, and opening hand.</td>
+            </tr>
+            <tr>
+              <td><code>ZoneDefinition</code></td>
+              <td>Ownership badge (PerPlayer / Shared / PerTeam), flag chips (Stack / Active / Ephemeral), property grid for ordering/visibility/entry position, and a capacity row.</td>
+            </tr>
+            <tr>
+              <td><code>StatDefinition</code></td>
+              <td>Stat name and abbreviation badge. Visual range bar with min/max labels and a white tick mark at the default value. Plain-English clamping summary. Validates inverted min/max and out-of-bounds defaults.</td>
+            </tr>
+            <tr>
+              <td><code>KeywordDefinition</code></td>
+              <td>Keyword name in large type, optional short-code badge, Evergreen badge, italic reminder text, and a <em>Card display</em> preview showing <code>FormatReminderLine()</code> output.</td>
+            </tr>
+            <tr>
+              <td><code>KeywordLibrary</code></td>
+              <td>Keyword count badge, evergreen vs set-specific breakdown, scrollable pill grid (green = evergreen, blue = standard), and an embedded <strong>Generate Library</strong> button.</td>
+            </tr>
+            <tr>
+              <td><code>FaceLayoutType</code></td>
+              <td>Property grid with ✓ / ✗ indicators for every boolean rule: can cast non-default face, switches during play, retains counters and tapped state on switch.</td>
+            </tr>
+            <tr>
+              <td><code>CounterType</code></td>
+              <td>Counter name, italic description, and a stat-effect row showing which stat is modified and the per-counter delta with a coloured +/− sign (green positive, red negative).</td>
+            </tr>
+            <tr>
+              <td><code>DeckFormatDefinition</code></td>
+              <td>Format name, plain-English rules grid (deck size range, copy limit, set legality), and inline set-code pills when set constraints are enabled.</td>
+            </tr>
+            <tr>
+              <td><code>RarityDefinition</code></td>
+              <td>Rarity name displayed in its own configured colour, hex code label, and a full-width colour swatch bar.</td>
+            </tr>
+            <tr>
+              <td><code>SetDefinition</code></td>
+              <td>Set name with a set-code badge matching the style used in <code>DeckFormatDefinitionEditor</code> pills, plus release date.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 id="generators">Library generators</h2>
+        <p>Two generator tools scan the project's <code>AssetDatabase</code> and auto-populate catalog assets. Run them after creating or renaming assets of the relevant type.</p>
+
+        <h3 id="keyword-generator">Keyword Library Generator</h3>
+        <p>Finds every <code>KeywordDefinition</code> in the project, sorts alphabetically by <code>KeywordName</code>, and writes them into a <code>KeywordLibrary</code> asset.</p>
+
+        <p><strong>Two ways to run it:</strong></p>
+        <ol>
+          <li><strong>Inspector button (recommended):</strong> Select a <code>KeywordLibrary</code> asset → click <strong>Generate Library</strong> in the custom inspector panel.</li>
+          <li><strong>Menu bar:</strong> Select a <code>KeywordLibrary</code> asset → <em>Card Game Engine → Generate Keyword Library</em>. The menu item is greyed out when no library is selected.</li>
+        </ol>
+
+        <h3 id="registry-generator">Asset Registry Generator</h3>
+        <p>Finds all registered asset types (<code>CardTemplate</code>, <code>StatDefinition</code>, <code>CounterType</code>, <code>CardStateFlag</code>, <code>ZoneDefinition</code>, <code>ResourceType</code>, <code>ResourceSubtype</code>), sorts each group by its lookup key, and writes them into a <code>GameAssetRegistry</code> asset used by <code>NoCodeBootstrapper</code> and the serialization system.</p>
+
+        <p><strong>To run:</strong> Select a <code>GameAssetRegistry</code> asset → <em>Card Game Engine → Generate Asset Registry</em>. A summary dialog confirms how many assets of each type were registered.</p>
+
+        <p>See <a href="asset-registry.html">Asset Registry</a> for full details on how the registry integrates with the rest of the engine.</p>
+
+        <h2 id="validation">Inline validation reference</h2>
+        <p>Every custom inspector surfaces configuration problems as Unity <code>HelpBox</code> messages — no need to run the game to find broken references. Common warnings:</p>
+
+        <table>
+          <thead><tr><th>Warning</th><th>Asset</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>TemplateId / StatName / ZoneName / CounterName is empty</td>
+              <td>Various definitions</td>
+              <td>Assign a unique string ID — asset resolution via <code>GameAssetRegistry</code> uses these as lookup keys.</td>
+            </tr>
+            <tr>
+              <td>Face 0 is null</td>
+              <td><code>CardTemplate</code></td>
+              <td>Assign a <code>CardDefinition</code> to the first face slot — without it no <code>CardInstance</code> can be created.</td>
+            </tr>
+            <tr>
+              <td>No FaceLayoutType assigned</td>
+              <td><code>CardTemplate</code></td>
+              <td>Assign a layout asset — face-switching behaviour is undefined without one.</td>
+            </tr>
+            <tr>
+              <td>Stack zone missing / no per-player zones</td>
+              <td><code>GameDefinition</code></td>
+              <td>Configure the required zones in <em>Per-Player Zones</em> and <em>Shared Zones</em> arrays.</td>
+            </tr>
+            <tr>
+              <td>MinValue &gt; MaxValue</td>
+              <td><code>StatDefinition</code></td>
+              <td>Invert the bounds — <code>Clamp()</code> will always return MinValue when this is reversed.</td>
+            </tr>
+            <tr>
+              <td>Set constraints on with no sets listed</td>
+              <td><code>DeckFormatDefinition</code></td>
+              <td>Add at least one <code>SetDefinition</code> to the Allowed Sets array, or disable set constraints.</td>
+            </tr>
+            <tr>
+              <td>Stat Effect enabled but no StatDefinition</td>
+              <td><code>CounterType</code></td>
+              <td>Assign a <code>StatDefinition</code> to the Stat Effect field, or disable Has Stat Effect.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="ability-editor.html">← Ability Editor</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="node-graph-editor.html">Node Graph Editor →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#card-preview">Card Preview window</a>
+          <a href="#inspectors">Custom inspectors</a>
+          <a href="#generators">Library generators</a>
+          <a href="#keyword-generator" class="toc-sub">Keyword Library</a>
+          <a href="#registry-generator" class="toc-sub">Asset Registry</a>
+          <a href="#validation">Validation reference</a>
+        </nav>
+      </aside>

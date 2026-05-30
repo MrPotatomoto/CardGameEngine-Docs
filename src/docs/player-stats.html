@@ -1,0 +1,126 @@
+---
+layout: base.njk
+title: "Player Stats"
+description: "Track life totals, poison counters, energy, and any other numeric player stat with PlayerStatManager and PlayerStatDefinition."
+pageKey: player-stats
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Player Stats</div>
+          <h1>Player Stats</h1>
+          <p class="doc-lead">Track life totals, poison counters, energy, and any other numeric player resource with <code>PlayerStatManager</code> and <code>PlayerStatDefinition</code>.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Card stats (power, toughness) live on <code>CardInstance</code> and are modified by <a href="continuous-effects.html">continuous effects</a>. <em>Player</em> stats are different — they are independent numeric values owned by players, not cards. Life totals, poison counters, and energy counters are classic examples.</p>
+        <p><code>PlayerStatManager</code> is accessed via <code>context.PlayerStatManager</code>. Every write goes through the replacement-effect layer, so damage prevention and other interceptors work automatically.</p>
+
+        <h2 id="defining">Defining a player stat</h2>
+        <p>Create a <code>PlayerStatDefinition</code> asset: <strong>Create → Card Game Engine → Definitions → Player Stat</strong>.</p>
+        <p>Key inspector fields:</p>
+        <ul>
+          <li><strong>Stat Name</strong> — display name (e.g. "Life", "Poison").</li>
+          <li><strong>Starting Value</strong> — initial value when a player is initialised (e.g. 20 for life).</li>
+          <li><strong>Min Value / Max Value</strong> — clamping bounds. Set <em>Max Value</em> to a very large number if there is no upper cap.</li>
+        </ul>
+
+        <h2 id="initialising">Initialising players</h2>
+        <p>Call <code>Initialize</code> for each player before the game loop starts. This seeds their stats at <code>StartingValue</code>.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Setup</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// lifeStatDef.StartingValue = 20, poisonStatDef.StartingValue = 0</span>
+context.PlayerStatManager.Initialize(player1, <span class="token-keyword">new</span>[] { lifeStatDef, poisonStatDef });
+context.PlayerStatManager.Initialize(player2, <span class="token-keyword">new</span>[] { lifeStatDef, poisonStatDef });</code></pre>
+        </div>
+
+        <h2 id="reading">Reading a stat</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">int</span> life = context.PlayerStatManager.GetStat(player1, lifeStatDef);
+Debug.Log(<span class="token-string">$"{player1.DisplayName} has {life} life."</span>);</code></pre>
+        </div>
+
+        <h2 id="writing">Modifying a stat</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Dealing player damage / gaining life</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">statMgr</span> = context.PlayerStatManager;
+<span class="token-keyword">var</span> <span class="token-var">source</span>  = <span class="token-keyword">new</span> <span class="token-type">EffectSource</span>(Guid.NewGuid(), <span class="token-string">"Lava Spike"</span>);
+
+<span class="token-comment">// Deal 3 damage to player (subtract from life)</span>
+statMgr.ModifyStat(player1, lifeStatDef, delta: -<span class="token-number">3</span>, source);
+
+<span class="token-comment">// Set life to a specific value</span>
+statMgr.SetStat(player1, lifeStatDef, newValue: <span class="token-number">1</span>, source);
+
+<span class="token-comment">// Gain 4 life</span>
+statMgr.ModifyStat(player1, lifeStatDef, delta: +<span class="token-number">4</span>, source);</code></pre>
+        </div>
+
+        <p>All writes are clamped to the stat's configured bounds and fire a <code>PlayerStatChangedEvent</code> through the replacement-effect layer. Replacement effects (like damage prevention) can intercept and modify the change before it is applied.</p>
+
+        <h2 id="events">Events</h2>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>When</th><th>Key fields</th></tr></thead>
+          <tbody>
+            <tr><td><code>PlayerStatChangedEvent</code></td><td>Any successful write that changes the value.</td><td><code>Player</code>, <code>Stat</code>, <code>OldValue</code>, <code>NewValue</code></td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="sba-integration">SBA integration — player elimination</h2>
+        <p>The engine ships a <code>PlayerEliminationSBA</code> that checks whether a player's stat has reached the configured minimum. Register it to automatically eliminate players at 0 life:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Player elimination SBA</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// playerEliminationSBA is a PlayerEliminationSBA ScriptableObject.
+// Configure: Stat = lifeStatDef, Elimination Threshold = 0.</span>
+context.StateBasedActionManager.Register(playerEliminationSBA);
+
+<span class="token-comment">// Subscribe to know when a player is eliminated</span>
+context.EventBus.Subscribe&lt;<span class="token-type">PlayerEliminatedEvent</span>&gt;(e =&gt;
+{
+    Debug.Log(<span class="token-string">$"{e.Player.DisplayName} has been eliminated!"</span>);
+    <span class="token-comment">// trigger game-over or remove the player from the turn order</span>
+});</code></pre>
+        </div>
+
+        <p>Create the SBA asset via <strong>Create → Card Game Engine → Rules → Player Elimination SBA</strong>.</p>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="attachments.html">← Attachments</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="state-based-actions.html">State-Based Actions →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#defining">Defining a stat</a>
+          <a href="#initialising">Initialising players</a>
+          <a href="#reading">Reading a stat</a>
+          <a href="#writing">Modifying a stat</a>
+          <a href="#events">Events</a>
+          <a href="#sba-integration">SBA integration</a>
+        </nav>
+      </aside>

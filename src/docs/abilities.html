@@ -1,0 +1,195 @@
+---
+layout: base.njk
+title: "Abilities"
+description: "Triggered and activated abilities in Card Game Engine: definitions, costs, the visual editor, and the trigger registry."
+pageKey: abilities
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Abilities</div>
+          <h1>Abilities</h1>
+          <p class="doc-lead">Give cards automatic reactions and player-activated powers using the WHEN / IF / THEN ability model.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Every card ability in Card Game Engine is one of two kinds:</p>
+        <ul>
+          <li><strong>Triggered abilities</strong> — automatic reactions to game events. "Whenever a creature enters the battlefield, draw a card."</li>
+          <li><strong>Activated abilities</strong> — player-pays-a-cost actions. "{T}: add one mana."</li>
+        </ul>
+        <p>Both are configured entirely in the Inspector as <code>ScriptableObject</code> assets, then attached to a <code>CardDefinition</code> via its <strong>Triggered Abilities</strong> or <strong>Activated Abilities</strong> lists. No subclassing needed for typical abilities.</p>
+
+        <h2 id="triggered">Triggered Abilities</h2>
+        <p>A <code>TriggeredAbilityDefinition</code> has three parts — it is literally a WHEN / IF / THEN:</p>
+
+        <div class="concept-grid">
+          <div class="concept-item">
+            <h4>WHEN — EventFilterDefinition</h4>
+            <p>Which game event causes this ability to trigger. Examples: <code>CardEnteredZoneEventFilter</code>, <code>CardDamagedEventFilter</code>, <code>TransferTagEventFilter</code>.</p>
+          </div>
+          <div class="concept-item">
+            <h4>IF — ConditionDefinition (optional)</h4>
+            <p>Extra guard checked after the event matches. Examples: <code>ZoneContainsCondition</code>, <code>AndCondition</code>, <code>NotCondition</code>. Leave empty to trigger on the event match alone.</p>
+          </div>
+          <div class="concept-item">
+            <h4>THEN — EffectDefinition</h4>
+            <p>What happens when the ability resolves. Any <code>EffectDefinition</code> asset — <code>DrawCardEffectDefinition</code>, <code>DealDamageEffectDefinition</code>, <code>SequenceEffectDefinition</code>, etc.</p>
+          </div>
+        </div>
+
+        <h3 id="triggered-create">Creating a triggered ability</h3>
+        <ol>
+          <li>Right-click in the Project window → <strong>Create → Card Game Engine → Abilities → Triggered Ability</strong>.</li>
+          <li>The custom inspector shows three colour-coded sections. Click <strong>Create &amp; Assign</strong> next to the WHEN field to pick an event filter type from a context menu — the asset is created in the same folder and linked automatically.</li>
+          <li>Optionally set the IF condition.</li>
+          <li>Click <strong>Create &amp; Assign</strong> next to THEN and pick an effect type.</li>
+          <li>Toggle <em>Bypasses Stack</em> if this ability should resolve instantly without players being able to respond.</li>
+          <li>Drag the finished ability into the <strong>Triggered Abilities</strong> list on your <code>CardDefinition</code>.</li>
+        </ol>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> Error banners appear in the inspector when WHEN or THEN is unassigned. An ability with no event filter never fires; one with no effect does nothing.
+        </div>
+
+        <h3 id="triggered-runtime">Runtime lifecycle</h3>
+        <p>When a card with triggered abilities enters an active zone (any zone where <code>ZoneDefinition.AbilitiesActive</code> is true), your game should call <code>TriggerRegistry.Register(ability, card, controller)</code> for each ability. When the card leaves, call <code>TriggerRegistry.UnregisterAll(card)</code>.</p>
+        <p>On every published event, <code>TriggerRegistry</code> calls <code>ShouldTrigger</code> on every registered ability. If it returns <code>true</code>, an <code>ActiveTrigger</code> is queued. The game state machine drains the trigger queue before each priority grant, calling <code>CreateEffect()</code> to instantiate the <code>IEffect</code> and executing it.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Registering card abilities</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// When a card enters the battlefield, register its triggered abilities.</span>
+context.EventBus.Subscribe&lt;<span class="token-type">CardEnteredZoneEvent</span>&gt;(e =&gt;
+{
+    <span class="token-keyword">if</span> (e.EnteredZone != battlefield) <span class="token-keyword">return</span>;
+
+    <span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">ability</span> <span class="token-keyword">in</span> e.Card.Definition.TriggeredAbilities)
+        context.TriggerRegistry.Register(ability, e.Card, e.Card.Controller);
+});
+
+<span class="token-comment">// When it leaves, clean up.</span>
+context.EventBus.Subscribe&lt;<span class="token-type">CardLeftZoneEvent</span>&gt;(e =&gt;
+{
+    <span class="token-keyword">if</span> (e.LeftZone != battlefield) <span class="token-keyword">return</span>;
+    context.TriggerRegistry.UnregisterAll(e.Card);
+});</code></pre>
+        </div>
+
+        <h2 id="activated">Activated Abilities</h2>
+        <p>A <code>ActivatedAbilityDefinition</code> describes a "[Cost]: [Effect]" ability. The player pays one or more costs voluntarily to produce an effect.</p>
+
+        <h3 id="activated-parts">Parts of an activated ability</h3>
+        <ul>
+          <li><strong>Costs</strong> (<code>AbilityCost[]</code>) — all must be payable and are all paid atomically. See <a href="#costs">Ability Costs</a> below.</li>
+          <li><strong>Effect</strong> (<code>EffectDefinition</code>) — what happens when the ability resolves.</li>
+          <li><strong>Timing</strong> (<code>ActivationTiming</code>) — <code>AnyTime</code> (instant speed) or <code>SorcerySpeed</code> (your main phase, empty stack only).</li>
+          <li><strong>Bypasses Stack</strong> — if true, resolves immediately; players cannot respond. Most mana abilities use this.</li>
+        </ul>
+
+        <h3 id="activated-create">Creating an activated ability</h3>
+        <ol>
+          <li>Right-click → <strong>Create → Card Game Engine → Abilities → Activated Ability</strong>.</li>
+          <li>In the <strong>COSTS</strong> section, use the reorderable list to drag existing cost assets, or click <strong>Create &amp; Add Cost</strong> to create one in-place.</li>
+          <li>In the <strong>EFFECT</strong> section, assign or create an effect.</li>
+          <li>Set Timing and stack behaviour.</li>
+          <li>Drag the ability into the <strong>Activated Abilities</strong> list on your <code>CardDefinition</code>.</li>
+        </ol>
+
+        <h3 id="activated-runtime">Runtime flow</h3>
+        <p>Your game layer calls <code>ActivateAbilitySystem.TryActivate(card, abilityIndex, player)</code> when a player uses an ability. The system checks timing legality and <code>CanActivate()</code>, pays costs via <code>PayCosts()</code>, then either executes immediately (if <code>BypassesStack</code>) or pushes a <code>StackEntry</code>.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Activating a tap ability at runtime</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// e.g., player clicks "Use ability 0" on a card</span>
+<span class="token-keyword">var</span> <span class="token-var">result</span> = context.ActivateAbilitySystem.TryActivate(card, abilityIndex: <span class="token-number">0</span>, player);
+
+<span class="token-keyword">if</span> (!result.Succeeded)
+    Debug.LogWarning(<span class="token-string">$"Cannot activate: {result.Reason}"</span>);</code></pre>
+        </div>
+
+        <h2 id="costs">Ability Costs</h2>
+        <p><code>AbilityCost</code> is an abstract <code>ScriptableObject</code>. The engine ships with several concrete types, and you can add your own by extending it.</p>
+
+        <div class="concept-grid">
+          <div class="concept-item">
+            <h4>TapCostDefinition</h4>
+            <p>Requires the source card to be untapped. Taps it on payment.</p>
+            <p><em>Create → Card Game Engine → Costs → Tap</em></p>
+          </div>
+          <div class="concept-item">
+            <h4>CompositeCostDefinition</h4>
+            <p>Combines multiple costs with AND — all sub-costs must be payable and are all paid together. Use to model "{T}, Pay 2 mana" combos.</p>
+            <p><em>Create → Card Game Engine → Costs → Composite</em></p>
+          </div>
+        </div>
+
+        <h3 id="custom-cost">Writing a custom cost</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — SacrificeCost.cs</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">using</span> UnityEngine;
+<span class="token-keyword">using</span> CardGameEngine;
+
+<span class="token-comment">/// &lt;summary&gt;Cost: sacrifice the source card.&lt;/summary&gt;</span>
+[<span class="token-type">CreateAssetMenu</span>(menuName = <span class="token-string">"Card Game Engine/Costs/Sacrifice"</span>)]
+<span class="token-keyword">public sealed class</span> <span class="token-type">SacrificeCostDefinition</span> : <span class="token-type">AbilityCost</span>
+{
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">ZoneType</span> _graveyardZoneType;
+
+    <span class="token-keyword">public override bool</span> CanPay(<span class="token-type">Player</span> player, <span class="token-type">CardInstance</span> source, <span class="token-type">GameContext</span> context)
+    {
+        <span class="token-comment">// Can sacrifice if the card is on the battlefield</span>
+        <span class="token-keyword">return</span> source != <span class="token-keyword">null</span>
+            &amp;&amp; source.CurrentZone?.Definition?.ZoneType != _graveyardZoneType;
+    }
+
+    <span class="token-keyword">public override bool</span> Pay(<span class="token-type">Player</span> player, <span class="token-type">CardInstance</span> source,
+                              <span class="token-type">EffectSource</span> effectSource, <span class="token-type">GameContext</span> context)
+    {
+        <span class="token-keyword">var</span> <span class="token-var">graveyard</span> = context.ZoneManager.GetZoneByType(_graveyardZoneType, player);
+        <span class="token-keyword">if</span> (graveyard == <span class="token-keyword">null</span>) <span class="token-keyword">return false</span>;
+        <span class="token-keyword">return</span> context.ZoneManager.Transfer(source, graveyard, effectSource);
+    }
+}</code></pre>
+        </div>
+
+        <h2 id="bypasses-stack">Bypasses Stack</h2>
+        <p>Abilities with <code>BypassesStack = true</code> resolve immediately when they trigger or are activated — opponents cannot respond with instants. Use this for mana abilities and other "fast" effects that mirror real TCG rules. Leave it false for anything that should be interruptible.</p>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="events.html">← Events</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="keywords.html">Keywords →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#triggered">Triggered Abilities</a>
+          <a href="#triggered-create" class="toc-sub">Creating one</a>
+          <a href="#triggered-runtime" class="toc-sub">Runtime lifecycle</a>
+          <a href="#activated">Activated Abilities</a>
+          <a href="#activated-parts" class="toc-sub">Parts</a>
+          <a href="#activated-create" class="toc-sub">Creating one</a>
+          <a href="#activated-runtime" class="toc-sub">Runtime flow</a>
+          <a href="#costs">Ability Costs</a>
+          <a href="#custom-cost" class="toc-sub">Custom cost</a>
+          <a href="#bypasses-stack">Bypasses Stack</a>
+        </nav>
+      </aside>

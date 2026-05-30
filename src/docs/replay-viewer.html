@@ -1,0 +1,148 @@
+---
+layout: base.njk
+title: "Replay Viewer"
+description: "Inspect saved GameReplayLog JSON files in the Unity Editor. Step through the action timeline, filter by turn, and examine detailed state snapshots with the Replay Viewer window."
+pageKey: replay-viewer
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Replay Viewer</div>
+          <h1>Replay Viewer</h1>
+          <p class="doc-lead">Load a <code>GameReplayLog</code> JSON file in the Unity Editor and step through every action your game recorded — seeing the turn, phase, player, card, and notes for each event alongside a snapshot of the game state at the start of the session.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The Replay Viewer is an editor-only window that opens <code>.json</code> files produced by <code>GameSerializer.ReplayToJson</code> at runtime. It presents a two-panel layout:</p>
+        <ul>
+          <li><strong>Timeline (left)</strong> — a scrollable list of every recorded action, preceded by a fixed <em>Initial State</em> row. Click any row to select it.</li>
+          <li><strong>Detail (right)</strong> — shows the full data for whichever row is selected: structured fields for an action, or zone / player / resource data for the initial state.</li>
+        </ul>
+        <p>Open via <em>Window → Card Game Engine → Replay Viewer</em>. The window requires a minimum size of 700 × 450 px.</p>
+
+        <h2 id="recording">Recording replays at runtime</h2>
+        <p>Attach a <code>ReplayLogger</code> component to your game session object before play begins. The logger listens to game events and appends an <code>ActionRecord</code> each time a player acts. When the session ends (or at any point during play), call:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>string json = GameSerializer.ReplayToJson(replayLog);
+File.WriteAllText(outputPath, json);</code></pre>
+        </div>
+        <p>The resulting JSON file can be opened directly in the Replay Viewer. No Unity project or asset database is required — the viewer parses the file from any path on disk.</p>
+
+        <h2 id="loading">Loading a file</h2>
+        <p>Click <strong>Open…</strong> in the toolbar. A standard file-picker opens; select any <code>.json</code> file produced by <code>GameSerializer.ReplayToJson</code>. On success, the filename and total action count appear in the toolbar and the timeline populates. If the file cannot be parsed, a dialog shows the error message from the parser.</p>
+
+        <div class="callout callout-tip">
+          The viewer holds the log in memory only — it does not import the file as a Unity asset. You can open logs from outside your project folder (e.g., from a build output directory or a QA report archive) without any asset-database changes.
+        </div>
+
+        <h2 id="toolbar">Toolbar</h2>
+        <table class="api-table">
+          <thead><tr><th>Control</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Open…</strong></td><td>Open a file-picker and load a <code>GameReplayLog</code> JSON file from disk.</td></tr>
+            <tr><td>Filename label</td><td>Shows the base filename of the currently loaded file, or "(untitled)" if loaded programmatically.</td></tr>
+            <tr><td>Action count</td><td>Total number of <code>ActionRecord</code> entries in the log (unfiltered).</td></tr>
+            <tr><td>Turn slider</td><td>Filter the timeline to a single turn number. Set to 0 to show all turns. The label changes from "(all)" to "(T<em>n</em>)" when filtering is active.</td></tr>
+            <tr><td><strong>◀ / ▶</strong></td><td>Step backward or forward through the (filtered) timeline one action at a time. ◀ is disabled when the Initial State row is selected; ▶ is disabled at the last action.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="timeline">Timeline panel</h2>
+        <p>The timeline always opens with the <strong>Initial State</strong> row at the top (outside the scroll area). Below it, action rows appear in recording order. When a turn filter is active, rows for other turns are hidden — the visible rows are renumbered in display order but the underlying indices are unchanged.</p>
+
+        <h3>Action row layout</h3>
+        <p>Each action row is 36 px tall and shows:</p>
+        <ul>
+          <li>A <strong>4 px color bar</strong> on the left edge, color-coded by action type (see table below).</li>
+          <li>A <strong>turn chip</strong> (e.g., <em>T3</em>) in the top-left.</li>
+          <li>The <strong>phase / step</strong> label (e.g., <em>Main / PreCombatMain</em>) to the right of the chip.</li>
+          <li>The <strong>player display name</strong> and <strong>action type</strong> on the second line.</li>
+          <li>The <strong>card template ID</strong> (if the action involves a card), shown in a light blue tint.</li>
+        </ul>
+        <p>Click any row to select it; the detail panel updates immediately. The selected row highlights in blue.</p>
+
+        <h3>Action color coding</h3>
+        <table class="api-table">
+          <thead><tr><th>Color</th><th>Action type(s)</th></tr></thead>
+          <tbody>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#737378;vertical-align:middle;margin-right:6px"></span>Grey</td><td>Pass</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#4dbf66;vertical-align:middle;margin-right:6px"></span>Green</td><td>Act</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#e67233;vertical-align:middle;margin-right:6px"></span>Orange</td><td>Declare Attacker</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#4d8ce6;vertical-align:middle;margin-right:6px"></span>Blue</td><td>Declare Blocker</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#d93f3f;vertical-align:middle;margin-right:6px"></span>Red</td><td>Remove Attacker, Remove Blocker</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="detail">Detail panel</h2>
+        <p>The right panel shows different content depending on which timeline row is selected.</p>
+
+        <h3>Initial State detail</h3>
+        <p>Selecting the <em>Initial State</em> row shows a structured breakdown of the <code>GameSnapshot</code> captured at recording start:</p>
+        <table class="api-table">
+          <thead><tr><th>Section</th><th>Fields shown</th></tr></thead>
+          <tbody>
+            <tr><td>Initial State</td><td>CapturedAt timestamp, Turn number, Active player name, Priority player name.</td></tr>
+            <tr><td>Players</td><td>Display name for every player in the snapshot.</td></tr>
+            <tr><td>Zones</td><td>Zone definition name, owner display name (or "Shared"), and card count for every zone captured in the snapshot.</td></tr>
+            <tr><td>Stack</td><td>Controller name and description for each stack entry (only shown when the stack is non-empty at capture time).</td></tr>
+            <tr><td>Resources</td><td>For each resource pool: player name, resource type name, and a formatted list of subtype amounts.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Action detail</h3>
+        <p>Selecting an action row shows the full <code>ActionRecord</code> fields:</p>
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>Turn</td><td>Turn number when the action was recorded.</td></tr>
+            <tr><td>Phase</td><td>Phase name (e.g., <em>Main</em>, <em>Combat</em>).</td></tr>
+            <tr><td>Step</td><td>Step name within the phase, if applicable (e.g., <em>DeclareAttackers</em>). Omitted when empty.</td></tr>
+            <tr><td>Player</td><td>Display name of the acting player.</td></tr>
+            <tr><td>Type</td><td>Human-readable action type string.</td></tr>
+            <tr><td>Template ID</td><td>The <code>CardTemplateId</code> of the card involved, if any.</td></tr>
+            <tr><td>Target ID</td><td>The <code>TargetTemplateId</code>, if the action targeted a specific card.</td></tr>
+            <tr><td>Notes</td><td>Free-form text logged by the game (word-wrapped). Only shown when non-empty.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="workflow">Typical workflow</h2>
+        <ol>
+          <li>Enable <code>ReplayLogger</code> in your game session. Run a match (in the Editor or a standalone build).</li>
+          <li>After the match ends, the log JSON is written to disk by your session code calling <code>GameSerializer.ReplayToJson</code>.</li>
+          <li>In the Editor, open <em>Window → Card Game Engine → Replay Viewer</em>.</li>
+          <li>Click <strong>Open…</strong> and select the log file.</li>
+          <li>Click the <strong>Initial State</strong> row to confirm the starting zone counts and resource pools look correct.</li>
+          <li>Scroll through the timeline or use <strong>▶</strong> to step action by action. Use the turn slider to focus on a particular turn.</li>
+          <li>Click any action row to examine the full detail — phase, player, card, and notes — in the right panel.</li>
+        </ol>
+
+        <div class="callout callout-tip">
+          <strong>Investigating bugs:</strong> When a player reports unexpected behavior, ask them to share the replay JSON. Load it in the Replay Viewer, filter to the reported turn, and step through actions one by one to pinpoint the first incorrect transition.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="draft-simulator.html">← Draft &amp; Booster</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="api-reference.html">API Reference →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#recording">Recording replays</a>
+          <a href="#loading">Loading a file</a>
+          <a href="#toolbar">Toolbar</a>
+          <a href="#timeline">Timeline panel</a>
+          <a href="#detail">Detail panel</a>
+          <a href="#workflow">Typical workflow</a>
+        </nav>
+      </aside>

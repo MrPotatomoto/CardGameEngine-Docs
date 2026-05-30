@@ -1,0 +1,115 @@
+---
+layout: base.njk
+title: "Replacement Effects"
+description: "Built-in replacement effect ScriptableObjects: damage prevention, draw replacement, and zone-change redirection."
+pageKey: replacement-effects
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Replacement Effects</div>
+          <h1>Replacement Effects</h1>
+          <p class="doc-lead">Intercept events before they resolve — prevent damage, redirect draws, and reroute zone entries — using Inspector-configurable <code>ScriptableObject</code> blueprints.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The replacement effect system is covered in <a href="events.html#replacement-effects">Events → Replacement Effects</a>. This page documents the three <strong>built-in blueprint types</strong> that you configure in the Inspector, create runtime instances from, and register with the <code>ReplacementEffectLayer</code>.</p>
+        <p>Each blueprint follows the same lifecycle:</p>
+        <ol>
+          <li>Create the <code>ScriptableObject</code> asset and configure it.</li>
+          <li>When the providing card enters play (or at game start for global effects), call <code>CreateReplacementEffect(source, controller)</code> and register the returned object with <code>context.ReplacementEffectLayer.Register(effect)</code>.</li>
+          <li>Store the registered object's <code>ReplacementId</code> (<code>Guid</code>).</li>
+          <li>When the card leaves play, call <code>context.ReplacementEffectLayer.Unregister(replacementId)</code>.</li>
+        </ol>
+
+        <h2 id="damage-prevention">Damage Prevention</h2>
+        <p>Create via: <strong>Create → Card Game Engine → Replacement Effects → Damage Prevention</strong>.</p>
+        <p>Intercepts <code>CardDamagedEvent</code> and/or <code>PlayerDamagedEvent</code> and reduces the damage amount. If the remaining amount reaches zero, the event is fully suppressed.</p>
+
+        <h3>Inspector fields</h3>
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Card Filter</strong></td><td>Optional — only prevent damage to cards matching this filter. Leave empty to prevent damage to any card.</td></tr>
+            <tr><td><strong>Player Target</strong></td><td><code>None</code> / <code>ActivePlayer</code> / <code>PriorityPlayer</code> — extend prevention to a player role as well.</td></tr>
+            <tr><td><strong>Damage Type</strong></td><td>Optional — only prevent damage of this type. Leave empty for any type.</td></tr>
+            <tr><td><strong>Prevent Amount</strong></td><td>How much to reduce per event. <code>-1</code> = prevent all damage.</td></tr>
+            <tr><td><strong>Is Mandatory</strong></td><td>If false, the controller is asked whether to apply it.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — "Prevent all damage to target creature this turn"</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">var</span> <span class="token-var">protection</span> = damagePrevDef.CreateReplacementEffect(source, controller);
+context.ReplacementEffectLayer.Register(protection);
+Guid savedId = protection.ReplacementId;
+
+<span class="token-comment">// When the turn ends or the card leaves:</span>
+context.ReplacementEffectLayer.Unregister(savedId);</code></pre>
+        </div>
+
+        <h2 id="draw-replacement">Draw Replacement</h2>
+        <p>Create via: <strong>Create → Card Game Engine → Replacement Effects → Draw Replacement</strong>.</p>
+        <p>Intercepts <code>CardEnteredZoneEvent</code> for draws (identified by a <code>TransferTag</code>) and redirects the card to an alternate zone instead of the hand. The original hand-entry event is suppressed.</p>
+
+        <p>Common uses: "exile cards you would draw instead"; "drawn cards are placed on the bottom of your library."</p>
+
+        <h3>Inspector fields</h3>
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Draw Tag</strong></td><td>The <code>TransferTag</code> your <code>DrawCardEffect</code> uses. Only transfers with this tag are treated as draws.</td></tr>
+            <tr><td><strong>Hand Zone Type</strong></td><td>The <code>ZoneType</code> of the player's hand.</td></tr>
+            <tr><td><strong>Card Filter</strong></td><td>Optional — only replace draws of cards matching this filter.</td></tr>
+            <tr><td><strong>Redirect Zone Type</strong></td><td>Where to send the drawn card instead of the hand.</td></tr>
+            <tr><td><strong>Is Mandatory</strong></td><td>If false, the controller chooses whether to apply it.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="zone-change-replacement">Zone-Change Replacement</h2>
+        <p>Create via: <strong>Create → Card Game Engine → Replacement Effects → Zone Change Replacement</strong>.</p>
+        <p>Intercepts <code>CardEnteredZoneEvent</code> for a specific zone type (and optionally a specific transfer tag or card filter) and immediately redirects the card to a different zone. The original entry is suppressed.</p>
+
+        <p>Common uses: "if a creature would die, exile it instead"; "if a card would be put into your graveyard from anywhere, exile it instead."</p>
+
+        <h3>Inspector fields</h3>
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Intercept Zone Type</strong></td><td>The zone type to watch — e.g. "Graveyard".</td></tr>
+            <tr><td><strong>Card Filter</strong></td><td>Optional — only intercept cards matching this filter.</td></tr>
+            <tr><td><strong>Transfer Tag</strong></td><td>Optional — only intercept transfers with this tag.</td></tr>
+            <tr><td><strong>Redirect Zone Type</strong></td><td>Where to send the card instead — e.g. "Exile".</td></tr>
+            <tr><td><strong>Is Mandatory</strong></td><td>If false, the controller chooses whether to apply it.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> Chain multiple zone-change replacements carefully. Each one applies at most once per event. If the redirect zone type matches the intercept zone type, the effect skips itself to avoid re-triggering.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="continuous-effects.html">← Continuous Effects</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="targeting.html">Targeting →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#damage-prevention">Damage Prevention</a>
+          <a href="#draw-replacement">Draw Replacement</a>
+          <a href="#zone-change-replacement">Zone-Change Replacement</a>
+        </nav>
+      </aside>

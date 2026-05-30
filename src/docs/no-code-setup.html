@@ -1,0 +1,264 @@
+---
+layout: base.njk
+title: "No-Code Setup"
+description: "Run a complete card game session entirely from the Unity Inspector using GameDefinition and NoCodeBootstrapper — no C# required."
+pageKey: no-code-setup
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / No-Code Setup</div>
+          <h1>No-Code Setup</h1>
+          <p class="doc-lead">Configure and run a complete game session from the Unity Inspector using two assets — <code>GameDefinition</code> and <code>NoCodeBootstrapper</code> — without writing any C#.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The no-code path bundles the bootstrapper pattern into a pair of ready-made types:</p>
+
+        <div class="concept-grid">
+          <div class="concept-item">
+            <h4>GameDefinition</h4>
+            <p>A ScriptableObject that holds every configuration value for one game variant: turn structure, zones, players, decks, win conditions, state-based actions, and opening-hand settings.</p>
+          </div>
+          <div class="concept-item">
+            <h4>NoCodeBootstrapper</h4>
+            <p>A MonoBehaviour that reads a <code>GameDefinition</code> at <code>Start()</code>, creates all zones and players, populates decks, deals opening hands, and drives the turn loop — all without any manual wiring.</p>
+          </div>
+        </div>
+
+        <p>For games with custom logic that can't fit in the Inspector (e.g. UI-driven mulligans, undo support, non-standard zone layouts), subclass <a href="../docs/getting-started.html"><code>GameBootstrapper</code></a> directly and use <code>NoCodeBootstrapper</code> as a reference implementation.</p>
+
+        <h2 id="minimum-setup">Minimum setup</h2>
+        <ol>
+          <li><strong>Create a TurnStructureDefinition</strong> — <em>Create → Card Game Engine → Turn Structure</em>. Add at least one phase.</li>
+          <li><strong>Create a ZoneDefinition with IsStack = true</strong> — this is the effect-resolution stack.</li>
+          <li><strong>Create per-player zones</strong> (Library, Hand, Battlefield, Graveyard) as ZoneDefinition assets. Set <code>IsStack = false</code> on each.</li>
+          <li><strong>Create a GameDefinition</strong> — <em>Create → Card Game Engine → Game Definition</em>. Fill in Turn Structure, Stack Zone, Per Player Zones, Library Zone, Hand Zone, and Players (at least two entries).</li>
+          <li><strong>Add a Win Condition</strong> — create a <em>Last Player Standing</em> asset and add it to the Win Conditions array.</li>
+          <li><strong>Add NoCodeBootstrapper to a scene GameObject</strong> — <em>Add Component → Card Game Engine → No-Code Bootstrapper</em>. Assign your GameDefinition.</li>
+          <li><strong>Press Play.</strong></li>
+        </ol>
+
+        <div class="callout callout-note">
+          <strong>Library and Hand Zone fields</strong> on GameDefinition are semantic shorthand. The zones must also appear in the <em>Per Player Zones</em> array — the dedicated fields just tell the bootstrapper which zone to use for deck population and hand dealing.
+        </div>
+
+        <h2 id="game-definition">GameDefinition</h2>
+        <p>Create via <strong>Create → Card Game Engine → Game Definition</strong>.</p>
+
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Turn Structure</strong></td><td><code>TurnStructureDefinition</code></td><td>Phases (and steps) that make up every turn.</td></tr>
+            <tr><td><strong>Stack Zone</strong></td><td><code>ZoneDefinition</code></td><td>Must have <code>IsStack = true</code>. Created once for the whole game.</td></tr>
+            <tr><td><strong>Per Player Zones</strong></td><td><code>ZoneDefinition[]</code></td><td>One instance of each zone is created per player (Library, Hand, Battlefield, Graveyard, etc.).</td></tr>
+            <tr><td><strong>Shared Zones</strong></td><td><code>ZoneDefinition[]</code></td><td>One instance of each zone for the entire game (e.g. a shared Exile or a central market row).</td></tr>
+            <tr><td><strong>Library Zone</strong></td><td><code>ZoneDefinition</code></td><td>Semantic: identifies which per-player zone is the library. Must also appear in Per Player Zones.</td></tr>
+            <tr><td><strong>Hand Zone</strong></td><td><code>ZoneDefinition</code></td><td>Semantic: identifies which per-player zone is the hand. Must also appear in Per Player Zones.</td></tr>
+            <tr><td><strong>Players</strong></td><td><code>PlayerSetupEntry[]</code></td><td>One entry per player seat in turn order. Index 0 takes the first turn.</td></tr>
+            <tr><td><strong>Win Conditions</strong></td><td><code>WinConditionDefinition[]</code></td><td>Evaluated in order before each turn. First match ends the game.</td></tr>
+            <tr><td><strong>State-Based Actions</strong></td><td><code>ScriptableObject[]</code></td><td>Each asset must implement <code>IStateBasedAction</code>. Registered at game start.</td></tr>
+            <tr><td><strong>Opening Hand Size</strong></td><td><code>int</code> (default 7)</td><td>Cards dealt as each player's initial hand.</td></tr>
+            <tr><td><strong>Max Mulligans</strong></td><td><code>int</code> (default 7)</td><td>Maximum mulligan attempts per player.</td></tr>
+            <tr><td><strong>Enable Mulligan</strong></td><td><code>bool</code> (default true)</td><td>When false, each player receives exactly <em>Opening Hand Size</em> cards with no mulligan offer.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="player-setup">PlayerSetupEntry</h2>
+        <p>One entry per seat in the <em>Players</em> array. Serialized inline inside GameDefinition.</p>
+
+        <table>
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Player Name</strong></td><td>Display name used in UI and logs (e.g. "Player 1", "CPU").</td></tr>
+            <tr><td><strong>Is Human</strong></td><td>When true, priority windows use the response-queue pattern. When false, the AI strategy handles priority.</td></tr>
+            <tr><td><strong>AI Strategy</strong></td><td>An <code>AIStrategyDefinition</code> asset. Required when <em>Is Human</em> is false. Leave empty for a pass-always fallback.</td></tr>
+            <tr><td><strong>Deck</strong></td><td>The <code>DeckDefinition</code> to populate this player's library at game start. Leave empty for games without deck lists.</td></tr>
+            <tr><td><strong>Stats</strong></td><td><code>PlayerStatDefinition[]</code> assets to initialise (e.g. Life = 20). Stats not listed are initialised to their asset's <em>Starting Value</em>.</td></tr>
+            <tr><td><strong>Starting Resources</strong></td><td>Resources granted before Turn 1 (type, amount, optional subtype).</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="human-input">Human input — the response-queue pattern</h2>
+        <p>Because the turn loop runs synchronously inside a coroutine, UI input arrives between frames. <code>NoCodeBootstrapper</code> uses a response queue: UI code enqueues actions any time; on the next priority window for that player, the first queued entry is dequeued and pushed to the stack.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Card-click handler (attach to a CardView or button)</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>[<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">NoCodeBootstrapper</span> _bootstrapper;
+
+<span class="token-keyword">public void</span> OnCardClicked(<span class="token-type">CardInstance</span> card)
+{
+    <span class="token-keyword">var</span> <span class="token-var">ctx</span>    = _bootstrapper.Context;
+    <span class="token-keyword">var</span> <span class="token-var">player</span> = ctx.Players[<span class="token-number">0</span>]; <span class="token-comment">// human is player 0</span>
+
+    <span class="token-keyword">var</span> <span class="token-var">action</span> = ctx.PlayCardSystem.CreatePlayCardAction(card, player);
+    <span class="token-keyword">if</span> (action == <span class="token-keyword">null</span>) <span class="token-keyword">return</span>; <span class="token-comment">// card can't be played right now</span>
+
+    <span class="token-comment">// Add targets if the card requires them</span>
+    action.Stage = <span class="token-type">PendingActionStage</span>.SelectingTargets;
+    action.Targets.Add(chosenTarget);
+
+    <span class="token-comment">// Commit: pays costs and locks in the action</span>
+    <span class="token-keyword">var</span> <span class="token-var">entry</span> = action.TryCommit(ctx);
+    <span class="token-keyword">if</span> (entry == <span class="token-keyword">null</span>) { action.Cancel(ctx); <span class="token-keyword">return</span>; }
+
+    <span class="token-comment">// Hand off to the bootstrapper's response queue</span>
+    _bootstrapper.CommitAction(entry);
+}</code></pre>
+        </div>
+
+        <p>When the player has nothing to do, the priority window auto-passes. You can also call <code>PassPriority()</code> explicitly — useful as the target of a "Pass" button in your UI:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Pass button handler</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">public void</span> OnPassButtonClicked()
+{
+    _bootstrapper.PassPriority();
+}</code></pre>
+        </div>
+
+        <h2 id="ai-players">AI players</h2>
+        <p>Set <em>Is Human</em> to false in a <code>PlayerSetupEntry</code> and assign an <code>AIStrategyDefinition</code>. Two strategies are built in:</p>
+
+        <table>
+          <thead><tr><th>Asset</th><th>Behaviour</th><th>Inspector fields</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>PassAlwaysStrategyDefinition</strong></td>
+              <td>Always passes priority — useful as a placeholder or "spectator" slot while building the game.</td>
+              <td>None</td>
+            </tr>
+            <tr>
+              <td><strong>RandomStrategyDefinition</strong></td>
+              <td>Picks a random legal action each priority window, with a configurable pass probability.</td>
+              <td><em>Pass Rate</em> (0–1 float), <em>Seed</em> (-1 = random)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>Both are located under <strong>Create → Card Game Engine → AI</strong>. For a custom strategy, subclass <code>AIStrategyDefinition</code> (see <a href="ai.html">AI Players</a>).</p>
+
+        <h2 id="unity-events">Unity Events</h2>
+        <p><code>NoCodeBootstrapper</code> exposes three serialized <code>UnityEvent&lt;Player&gt;</code> fields in the <em>Events</em> section. Subscribe via code from other components or listen at runtime to drive UI:</p>
+
+        <table>
+          <thead><tr><th>Event</th><th>When it fires</th><th>Player argument</th></tr></thead>
+          <tbody>
+            <tr><td><strong>On Game Over</strong></td><td>Once when all win conditions resolve and the game loop ends.</td><td>The winner, or <code>null</code> for a draw.</td></tr>
+            <tr><td><strong>On Priority Granted</strong></td><td>Each time a human player receives priority in a priority window.</td><td>The player who holds priority.</td></tr>
+            <tr><td><strong>On Player Eliminated</strong></td><td>Each time a player's <code>IsEliminated</code> flag is set to true.</td><td>The eliminated player.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Subscribing to events from another component</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code>[<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">NoCodeBootstrapper</span> _bootstrapper;
+
+<span class="token-keyword">private void</span> Awake()
+{
+    _bootstrapper._onGameOver.AddListener(OnGameOver);
+    _bootstrapper._onPlayerEliminated.AddListener(OnEliminated);
+}
+
+<span class="token-keyword">private void</span> OnGameOver(<span class="token-type">Player</span> winner)
+{
+    <span class="token-keyword">if</span> (winner != <span class="token-keyword">null</span>)
+        winLabel.text = <span class="token-string">$"{winner.DisplayName} wins!"</span>;
+    <span class="token-keyword">else</span>
+        winLabel.text = <span class="token-string">"Draw!"</span>;
+}
+
+<span class="token-keyword">private void</span> OnEliminated(<span class="token-type">Player</span> player)
+{
+    Debug.Log(<span class="token-string">$"{player.DisplayName} has been eliminated."</span>);
+}</code></pre>
+        </div>
+
+        <h2 id="opening-hand">Opening hand and mulligan</h2>
+        <p>When both <em>Library Zone</em> and <em>Hand Zone</em> are set and a player's <em>Deck</em> is assigned, the bootstrapper automatically:</p>
+        <ol>
+          <li>Populates the library from the deck definition.</li>
+          <li>Shuffles the library.</li>
+          <li>Deals <em>Opening Hand Size</em> cards.</li>
+          <li>Runs up to <em>Max Mulligans</em> rounds of mulligan offers (if <em>Enable Mulligan</em> is true).</li>
+        </ol>
+
+        <p>The default mulligan behaviour is <strong>auto-keep</strong> for all players. To add UI-driven or AI-driven mulligan decisions, subclass <code>GameBootstrapper</code> and override the mulligan event subscription:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Custom mulligan handler in a subclass</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// In your custom bootstrapper's OnGameSetupComplete override:</span>
+Context.EventBus.Subscribe&lt;<span class="token-type">MulliganOfferedEvent</span>&gt;(e =&gt;
+{
+    <span class="token-comment">// e.State.Player    — which player was offered the mulligan</span>
+    <span class="token-comment">// e.State.Round     — 0 = initial offer, 1+ = subsequent rounds</span>
+    <span class="token-comment">// e.State.Cards     — the current hand contents</span>
+
+    <span class="token-keyword">if</span> (ShouldMulligan(e.State))
+        e.State.Mulligan();  <span class="token-comment">// return hand, draw one fewer card</span>
+    <span class="token-keyword">else</span>
+        e.State.Keep();
+});
+</code></pre>
+        </div>
+
+        <h2 id="extending">Extending the bootstrapper</h2>
+        <p>For anything beyond what the Inspector can express — custom undo, per-player game-object references, non-standard zone layouts — subclass <code>GameBootstrapper</code> directly. <code>NoCodeBootstrapper</code> is a practical reference for that pattern. The key overrides are:</p>
+
+        <table>
+          <thead><tr><th>Override</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>GetTurnStructure()</code></td><td>Return the turn structure asset.</td></tr>
+            <tr><td><code>SetupZones(context)</code></td><td>Call <code>ZoneManager.CreateZone</code> / <code>CreateStackZone</code>.</td></tr>
+            <tr><td><code>CreatePlayers(context)</code></td><td>Instantiate <code>Player</code> objects in turn order.</td></tr>
+            <tr><td><code>SetupPlayerResources(player, context)</code></td><td>Initialize stats and grant starting resources.</td></tr>
+            <tr><td><code>OnGameSetupComplete(players)</code></td><td>Register SBAs, subscribe to events, deal opening hands.</td></tr>
+            <tr><td><code>IsGameOver(context)</code></td><td>Return true when a win or loss condition is met.</td></tr>
+            <tr><td><code>OnPriorityWindow(player, tc, ctx)</code></td><td>Return true = pass, false = acted (pushed to stack).</td></tr>
+            <tr><td><code>OnGameOver()</code></td><td>Show results screen, log outcome, clean up.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> You can mix the no-code and coded approaches — use <code>GameDefinition</code> to hold your asset references and pass them to a custom bootstrapper subclass. This gets you the Inspector-driven configuration of GameDefinition without the limitations of <code>NoCodeBootstrapper</code>.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="ability-editor.html">← Ability Editor</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="asset-registry.html">Asset Registry →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#minimum-setup">Minimum setup</a>
+          <a href="#game-definition">GameDefinition</a>
+          <a href="#player-setup">PlayerSetupEntry</a>
+          <a href="#human-input">Human input</a>
+          <a href="#ai-players">AI players</a>
+          <a href="#unity-events">Unity Events</a>
+          <a href="#opening-hand">Opening hand</a>
+          <a href="#extending">Extending</a>
+        </nav>
+      </aside>

@@ -1,0 +1,220 @@
+---
+layout: base.njk
+title: "Win Conditions"
+description: "Define when and how a game ends with WinConditionDefinition assets. Includes the built-in LastPlayerStandingWinCondition and a guide to writing custom conditions."
+pageKey: win-conditions
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Win Conditions</div>
+          <h1>Win Conditions</h1>
+          <p class="doc-lead">Inspector-configurable rules that determine when and how a game ends. Stack multiple conditions to support simultaneous elimination, alternative win states, and draws.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Win conditions sit at the top of the game loop. Before each turn begins, <code>GameBootstrapper</code> calls <code>IsGameOver(context)</code>. Your override evaluates each <code>WinConditionDefinition</code> in order — the first one that fires stops the loop and records the winner.</p>
+        <p>Because conditions are ScriptableObject assets, they can be mixed and matched in the Inspector without touching C#. Create a condition asset, configure it, and add it to your <code>GameDefinition</code>'s <em>Win Conditions</em> array.</p>
+
+        <div class="callout callout-note">
+          <strong>Evaluation order matters.</strong> Conditions are checked in the order they appear in the array. If you have both an "alternative win" condition and a "last player standing" condition, put the alternative win first so it fires before the fallback.
+        </div>
+
+        <h2 id="base-class">WinConditionDefinition</h2>
+        <p>All win conditions subclass this abstract ScriptableObject and implement a single method:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — WinConditionDefinition contract</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">public abstract class</span> <span class="token-type">WinConditionDefinition</span> : <span class="token-type">ScriptableObject</span>
+{
+    <span class="token-comment">// Return true  → game is over; set winner to the winning player.</span>
+    <span class="token-comment">// Return true  → draw if winner is null (zero survivors).</span>
+    <span class="token-comment">// Return false → game continues.</span>
+    <span class="token-keyword">public abstract bool</span> Evaluate(<span class="token-type">GameContext</span> context, <span class="token-keyword">out</span> <span class="token-type">Player</span> winner);
+}</code></pre>
+        </div>
+
+        <table>
+          <thead><tr><th>Parameter</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>context</code></td><td>Live game state. Read <code>context.Players</code>, zones, stats, flags — anything needed to determine the outcome.</td></tr>
+            <tr><td><code>winner</code> (out)</td><td>Set to the winning <code>Player</code>, or <code>null</code> for a draw. Only meaningful when the method returns <code>true</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="last-player-standing">LastPlayerStandingWinCondition</h2>
+        <p>The built-in condition for the most common game-over rule: the last player who hasn't been eliminated wins.</p>
+
+        <p>Create via <strong>Create → Card Game Engine → Win Conditions → Last Player Standing</strong>. No Inspector fields to configure.</p>
+
+        <div class="concept-grid">
+          <div class="concept-item">
+            <h4>2+ survivors</h4>
+            <p>Returns <code>false</code> — the game continues.</p>
+          </div>
+          <div class="concept-item">
+            <h4>Exactly 1 survivor</h4>
+            <p>Returns <code>true</code>, <code>winner</code> = that player.</p>
+          </div>
+          <div class="concept-item">
+            <h4>0 survivors (draw)</h4>
+            <p>Returns <code>true</code>, <code>winner</code> = <code>null</code>. Fires when all remaining players are eliminated in the same SBA pass.</p>
+          </div>
+        </div>
+
+        <h2 id="player-eliminated">Player.IsEliminated</h2>
+        <p><code>LastPlayerStandingWinCondition</code> (and any custom condition checking survivors) reads <code>player.IsEliminated</code> — a simple boolean on the <code>Player</code> object.</p>
+
+        <p>This flag is not set by the engine automatically. Your bootstrapper is responsible for setting it when a <code>PlayerEliminatedEvent</code> is received. <code>NoCodeBootstrapper</code> does this for you:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — How NoCodeBootstrapper tracks eliminations</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// In OnGameSetupComplete — subscribes once at game start</span>
+Context.EventBus.Subscribe&lt;<span class="token-type">PlayerEliminatedEvent</span>&gt;(e =&gt;
+{
+    e.Player.IsEliminated = <span class="token-keyword">true</span>;
+    _onPlayerEliminated.Invoke(e.Player);
+});
+</code></pre>
+        </div>
+
+        <p>If you're writing a custom bootstrapper, add a similar subscription. The event is fired by <code>PlayerEliminationEffect</code>, which is itself triggered by <code>PlayerEliminationSBA</code> when a watched stat hits the elimination threshold.</p>
+
+        <div class="callout callout-note">
+          <strong>Typical elimination pipeline:</strong><br/>
+          <code>PlayerEliminationSBA</code> detects 0 life →
+          fires <code>PlayerEliminationEffect</code> →
+          fires <code>PlayerEliminatedEvent</code> →
+          bootstrapper sets <code>player.IsEliminated = true</code> →
+          <code>LastPlayerStandingWinCondition</code> sees one survivor → game over.
+        </div>
+
+        <h2 id="wire-up">Wiring up in GameDefinition</h2>
+        <p>Add condition assets to the <em>Win Conditions</em> array of your <code>GameDefinition</code>. <code>NoCodeBootstrapper</code> evaluates them in order each time <code>IsGameOver</code> is called:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — How NoCodeBootstrapper evaluates conditions</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">protected override bool</span> IsGameOver(<span class="token-type">GameContext</span> context)
+{
+    <span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">condition</span> <span class="token-keyword">in</span> _gameDefinition.WinConditions)
+    {
+        <span class="token-keyword">if</span> (condition.Evaluate(context, <span class="token-keyword">out var</span> <span class="token-var">winner</span>))
+        {
+            _winner = winner;
+            <span class="token-keyword">return true</span>;
+        }
+    }
+    <span class="token-keyword">return false</span>;
+}</code></pre>
+        </div>
+
+        <p>For a custom bootstrapper, implement the same pattern inside your <code>IsGameOver</code> override, or call each condition manually.</p>
+
+        <h2 id="custom">Writing a custom win condition</h2>
+        <p>Subclass <code>WinConditionDefinition</code>, add any Inspector fields you need, and implement <code>Evaluate</code>. Below is a condition that ends the game when any player assembles a three-card combo in their hand:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — ComboWinCondition example</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">using</span> UnityEngine;
+<span class="token-keyword">using</span> CardGameEngine;
+
+[<span class="token-type">CreateAssetMenu</span>(menuName = <span class="token-string">"My Game/Combo Win Condition"</span>)]
+<span class="token-keyword">public class</span> <span class="token-type">ComboWinCondition</span> : <span class="token-type">WinConditionDefinition</span>
+{
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">ZoneDefinition</span> _handZone;
+    [<span class="token-type">SerializeField</span>] <span class="token-keyword">private</span> <span class="token-type">CardTemplate</span>[] _comboPieces;
+
+    <span class="token-keyword">public override bool</span> Evaluate(<span class="token-type">GameContext</span> context, <span class="token-keyword">out</span> <span class="token-type">Player</span> winner)
+    {
+        winner = <span class="token-keyword">null</span>;
+        <span class="token-keyword">if</span> (context == <span class="token-keyword">null</span> || _handZone == <span class="token-keyword">null</span> || _comboPieces == <span class="token-keyword">null</span>)
+            <span class="token-keyword">return false</span>;
+
+        <span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">player</span> <span class="token-keyword">in</span> context.Players)
+        {
+            <span class="token-keyword">var</span> <span class="token-var">hand</span> = context.ZoneManager.GetZone(_handZone, player);
+            <span class="token-keyword">if</span> (hand == <span class="token-keyword">null</span>) <span class="token-keyword">continue</span>;
+
+            <span class="token-keyword">bool</span> hasAllPieces = <span class="token-keyword">true</span>;
+            <span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">piece</span> <span class="token-keyword">in</span> _comboPieces)
+            {
+                <span class="token-keyword">bool</span> found = <span class="token-keyword">false</span>;
+                <span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> <span class="token-var">card</span> <span class="token-keyword">in</span> hand.Cards)
+                    <span class="token-keyword">if</span> (card.Template == piece) { found = <span class="token-keyword">true</span>; <span class="token-keyword">break</span>; }
+
+                <span class="token-keyword">if</span> (!found) { hasAllPieces = <span class="token-keyword">false</span>; <span class="token-keyword">break</span>; }
+            }
+
+            <span class="token-keyword">if</span> (hasAllPieces)
+            {
+                winner = player;
+                <span class="token-keyword">return true</span>;
+            }
+        }
+        <span class="token-keyword">return false</span>;
+    }
+}</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> Win conditions are ScriptableObjects, so they can hold references to zone definitions, card templates, stat definitions, and any other asset. This lets you configure complex conditions entirely in the Inspector without additional code.
+        </div>
+
+        <h2 id="multiple">Combining multiple conditions</h2>
+        <p>You can add any number of conditions to <code>GameDefinition.WinConditions</code>. Common patterns:</p>
+
+        <table>
+          <thead><tr><th>Pattern</th><th>Setup</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Standard + alternative win</td>
+              <td>Add your alternative-win condition <em>before</em> <code>LastPlayerStandingWinCondition</code> so it takes priority.</td>
+            </tr>
+            <tr>
+              <td>Time limit</td>
+              <td>Write a <code>TurnLimitWinCondition</code> that reads <code>context.TurnNumber</code> and awards the win to whoever has the most life (or highest stat) after N turns.</td>
+            </tr>
+            <tr>
+              <td>Cooperative game</td>
+              <td>A condition that returns <code>true</code> when an objective is completed (<code>winner = null</code> for a team win), plus a loss condition that fires when all players are eliminated before the objective.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="state-based-actions.html">← State-Based Actions</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="deck-management.html">Deck Management →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#base-class">WinConditionDefinition</a>
+          <a href="#last-player-standing">LastPlayerStandingWinCondition</a>
+          <a href="#player-eliminated">Player.IsEliminated</a>
+          <a href="#wire-up">Wiring up</a>
+          <a href="#custom">Custom condition</a>
+          <a href="#multiple">Combining conditions</a>
+        </nav>
+      </aside>

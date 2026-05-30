@@ -1,0 +1,211 @@
+---
+layout: base.njk
+title: "Effects"
+description: "IEffect, EffectBase, built-in effects, and composing effect pipelines."
+pageKey: effects
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Effects</div>
+          <h1>Effects</h1>
+          <p class="doc-lead">Discrete, composable units of game action — the verbs of Card Game Engine.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Everything that <em>happens</em> in a game is expressed as an <code>IEffect</code>. Draw a card — effect. Deal 3 damage — effect. Create a token — effect. Chain them together — still just effects all the way down.</p>
+        <p>Effects are:</p>
+        <ul>
+          <li><strong>Atomic</strong> — each one does exactly one thing.</li>
+          <li><strong>Composable</strong> — wrap multiple effects in a <code>SequenceEffect</code> or <code>ConditionalEffect</code>.</li>
+          <li><strong>Testable</strong> — pass a <code>GameContext</code>, get back an <code>EffectResult</code>. No MonoBehaviour required.</li>
+          <li><strong>Event-sourced</strong> — built-in effects publish events so listeners can react.</li>
+        </ul>
+
+        <!-- ── IEffect ── -->
+        <h2 id="ieffect">IEffect</h2>
+
+        <div class="api-sig">
+          <code>EffectResult Execute(GameContext context)</code>
+        </div>
+
+        <p>The single method all effects must implement. Returns an <code>EffectResult</code> with a <code>Status</code> of:</p>
+
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>Success</code></td><td>The effect resolved normally.</td></tr>
+              <tr><td><code>Fizzled</code></td><td>No valid target or nothing to act on — silently does nothing.</td></tr>
+              <tr><td><code>Invalid</code></td><td>A precondition failed (e.g., null argument). Check your setup.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── EffectBase ── -->
+        <h2 id="effect-base">EffectBase</h2>
+        <p>Abstract base class for all custom effects. Inherit from it to get <code>Source</code> and <code>Controller</code> for free:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — Custom effect skeleton</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-keyword">public sealed class</span> <span class="token-type">HealEffect</span> : <span class="token-type">EffectBase</span>
+{
+    <span class="token-keyword">private readonly</span> <span class="token-type">Player</span> _target;
+    <span class="token-keyword">private readonly int</span>    _amount;
+
+    <span class="token-keyword">public</span> <span class="token-type">HealEffect</span>(<span class="token-type">EffectSource</span> source, <span class="token-type">Player</span> controller,
+        <span class="token-type">Player</span> target, <span class="token-keyword">int</span> amount) : <span class="token-keyword">base</span>(source, controller)
+    {
+        _target = target;
+        _amount = amount;
+    }
+
+    <span class="token-keyword">public override</span> <span class="token-type">EffectResult</span> Execute(<span class="token-type">GameContext</span> ctx)
+    {
+        <span class="token-keyword">if</span> (_target == <span class="token-keyword">null</span> || _amount &lt;= <span class="token-number">0</span>)
+            <span class="token-keyword">return</span> <span class="token-type">EffectResult</span>.Invalid;
+
+        _target.Life += _amount;
+        ctx.EventBus.Publish(<span class="token-keyword">new</span> <span class="token-type">LifeGainedEvent</span>(_target, _amount));
+        <span class="token-keyword">return</span> <span class="token-type">EffectResult</span>.Success;
+    }
+}</code></pre>
+        </div>
+
+        <!-- ── Built-in Effects ── -->
+        <h2 id="built-in">Built-in Effects</h2>
+
+        <h3 id="zone-effects">Zone / Card Movement</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Effect</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>MoveEffect</code></td><td>Moves a single card from its current zone to a destination zone.</td></tr>
+              <tr><td><code>DrawEffect</code></td><td>Moves the top N cards from a draw zone to a hand zone.</td></tr>
+              <tr><td><code>DiscardEffect</code></td><td>Moves a card from hand to graveyard.</td></tr>
+              <tr><td><code>DestroyEffect</code></td><td>Moves a card to the graveyard and fires <code>CardDestroyedEvent</code>.</td></tr>
+              <tr><td><code>ExileEffect</code></td><td>Moves a card to an exile zone.</td></tr>
+              <tr><td><code>ShuffleIntoDeckEffect</code></td><td>Moves a card to a deck zone and shuffles it.</td></tr>
+              <tr><td><code>ReturnToHandEffect</code></td><td>Moves a card from any zone back to its owner's hand.</td></tr>
+              <tr><td><code>CreateTokenEffect</code></td><td>Creates one or more token cards and places them in a destination zone. See <a href="tokens.html">Tokens</a>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="stat-effects">Stats &amp; Damage</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Effect</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>DamageEffect</code></td><td>Deals N damage to a card or player.</td></tr>
+              <tr><td><code>GainLifeEffect</code></td><td>Adds N life to a player.</td></tr>
+              <tr><td><code>LoseLifeEffect</code></td><td>Subtracts N life from a player.</td></tr>
+              <tr><td><code>AddCounterEffect</code></td><td>Adds N counters of a given type to a card.</td></tr>
+              <tr><td><code>RemoveCounterEffect</code></td><td>Removes N counters of a given type from a card.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="continuous-effects-effects">Continuous &amp; Copy</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Effect</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>ApplyContinuousEffect</code></td><td>Registers a modifier (stat buff, copy, etc.) with <code>ContinuousEffectManager</code>.</td></tr>
+              <tr><td><code>ScryEffect</code></td><td>Peeks the top N cards of a zone and lets the player reorder them. See <a href="scry.html">Scry</a>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="composite-effects">Composite Effects</h3>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead><tr><th>Effect</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>SequenceEffect</code></td><td>Executes a list of child effects in order. Stops at the first <code>Invalid</code> result.</td></tr>
+              <tr><td><code>ConditionalEffect</code></td><td>Executes one of two effects depending on a predicate evaluated at resolution time.</td></tr>
+              <tr><td><code>NoOpEffect</code></td><td>Always returns <code>Success</code> without doing anything. Useful as a placeholder branch.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="sequence-example">SequenceEffect example</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C# — "Lightning Helix" pattern</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Deal 3 damage to any target AND gain 3 life</span>
+<span class="token-keyword">var</span> <span class="token-var">helixEffect</span> = <span class="token-keyword">new</span> <span class="token-type">SequenceEffect</span>(source, controller,
+    <span class="token-keyword">new</span> <span class="token-type">DamageEffect</span>(source, controller, target, <span class="token-number">3</span>),
+    <span class="token-keyword">new</span> <span class="token-type">GainLifeEffect</span>(source, controller, controller, <span class="token-number">3</span>)
+);
+
+<span class="token-type">EffectResult</span> result = helixEffect.Execute(context);</code></pre>
+        </div>
+
+        <h3 id="conditional-example">ConditionalEffect example</h3>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// "If you control a Dragon, draw 2 cards; otherwise draw 1."</span>
+<span class="token-keyword">var</span> <span class="token-var">drawEffect</span> = <span class="token-keyword">new</span> <span class="token-type">ConditionalEffect</span>(source, controller,
+    condition:   () =&gt; battlefield.Cards.Any(c =&gt; c.IsType(dragonType)),
+    ifTrue:      <span class="token-keyword">new</span> <span class="token-type">DrawEffect</span>(source, controller, hand, <span class="token-number">2</span>),
+    ifFalse:     <span class="token-keyword">new</span> <span class="token-type">DrawEffect</span>(source, controller, hand, <span class="token-number">1</span>)
+);</code></pre>
+        </div>
+
+        <!-- ── EffectSource ── -->
+        <h2 id="effect-source">EffectSource</h2>
+        <p>Every effect carries an <code>EffectSource</code> that describes <em>why</em> the effect is happening — used for event data and future rules checks (e.g., "was this effect caused by a spell?").</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">C#</span>
+            <button class="copy-btn"><span class="copy-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="copy-label">Copy</span></button>
+          </div>
+          <pre><code><span class="token-comment">// Simple description source (good for most use cases)</span>
+<span class="token-keyword">var</span> <span class="token-var">source</span> = <span class="token-keyword">new</span> <span class="token-type">EffectSource</span>(<span class="token-string">"Lightning Helix"</span>);
+
+<span class="token-comment">// Source tied to a specific card (preferred for played spells)</span>
+<span class="token-keyword">var</span> <span class="token-var">source</span> = <span class="token-keyword">new</span> <span class="token-type">EffectSource</span>(card);</code></pre>
+        </div>
+
+        <!-- ── Page Nav ── -->
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="zones.html">← Zones</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="events.html">Events →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#ieffect">IEffect</a>
+          <a href="#effect-base">EffectBase</a>
+          <a href="#built-in">Built-in Effects</a>
+          <a href="#zone-effects" class="toc-sub">Zone / Movement</a>
+          <a href="#stat-effects" class="toc-sub">Stats &amp; Damage</a>
+          <a href="#continuous-effects-effects" class="toc-sub">Continuous &amp; Copy</a>
+          <a href="#composite-effects" class="toc-sub">Composite Effects</a>
+          <a href="#sequence-example" class="toc-sub">SequenceEffect</a>
+          <a href="#conditional-example" class="toc-sub">ConditionalEffect</a>
+          <a href="#effect-source">EffectSource</a>
+        </nav>
+      </aside>
