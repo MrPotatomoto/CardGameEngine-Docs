@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor Tools — Card Game Engine</title>
+  <meta name="description" content="Custom inspectors, the Card Preview window, and library generators built into Card Game Engine. Design cards and configure systems without leaving the Unity Inspector." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+            <li><a href="keywords.html">Keywords</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="stack.html">Stack &amp; Priority</a></li>
+            <li><a href="resources.html">Resources</a></li>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html">State-Based Actions</a></li>
+            <li><a href="win-conditions.html">Win Conditions</a></li>
+            <li><a href="deck-management.html">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="no-code-setup.html">No-Code Setup</a></li>
+            <li><a href="asset-registry.html">Asset Registry</a></li>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
+            <li><a href="editor-tools.html" class="active">Editor Tools</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="docs-main">
+      <article class="docs-content">
+        <div class="page-header">
+          <div class="page-header-meta">Tools</div>
+          <h1>Editor Tools</h1>
+          <p class="page-subtitle">Custom inspectors, the Card Preview window, and library generators — all the tooling built into the engine for designing cards and configuring systems without leaving the Unity Editor.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Card Game Engine ships a full suite of editor tooling that activates automatically when you open any engine asset in the Inspector. There is nothing to configure — custom inspectors replace the default Unity view for every engine ScriptableObject the moment the package is imported.</p>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>Custom Inspectors</h3>
+            <p>Every core asset has a custom inspector that shows an at-a-glance summary: artwork, type lines, range bars, colour swatches, flag chips, and validation warnings.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🃏</div>
+            <h3>Card Preview</h3>
+            <p>A floating window that renders a styled card frame — name, art, type line, rules text, keyword pills, stats — for any selected <code>CardTemplate</code> or <code>CardDefinition</code>.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Library Generators</h3>
+            <p>One-click tools that scan the project and auto-populate <code>KeywordLibrary</code> and <code>GameAssetRegistry</code> assets from all matching assets in the project.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">✓</div>
+            <h3>Inline Validation</h3>
+            <p>Every inspector surfaces configuration errors — missing references, impossible bounds, empty names — as <code>HelpBox</code> warnings before you run the game.</p>
+          </div>
+        </div>
+
+        <h2 id="card-preview">Card Preview window</h2>
+        <p>Open via <strong>Window → Card Game Engine → Card Preview</strong>. The window docks anywhere in the Unity layout and stays open across Play Mode sessions.</p>
+
+        <p>Select any <code>CardTemplate</code> or <code>CardDefinition</code> in the Project window — the preview updates automatically. For multi-face templates, use the <strong>◀ / ▶</strong> toolbar buttons to cycle between faces.</p>
+
+        <table>
+          <thead><tr><th>Region</th><th>Content</th></tr></thead>
+          <tbody>
+            <tr><td>Name band</td><td>Card name in bold against a dark strip</td></tr>
+            <tr><td>Art area</td><td>Sprite artwork scaled to fit, or a greyed placeholder</td></tr>
+            <tr><td>Type band</td><td>Supertype · Type — Subtype line</td></tr>
+            <tr><td>Text box</td><td>Rules text, keyword pills <code>[Flying] [Reach]</code>, italic flavor text</td></tr>
+            <tr><td>Stat strip</td><td>Abbreviation + value for each stat, right-aligned</td></tr>
+            <tr><td>Footer</td><td>Template ID and layout type (shown when a <code>CardTemplate</code> is selected)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> Dock the Card Preview beside the Project window. As you click through <code>CardTemplate</code> assets, the preview updates instantly — no need to open each asset's Inspector to read what a card does.
+        </div>
+
+        <h2 id="inspectors">Custom inspectors</h2>
+        <p>Every inspector follows the same pattern: a read-only summary panel at the top, inline validation below it, then the standard serialized-field inspector for editing. The summary refreshes automatically as fields change.</p>
+
+        <table>
+          <thead><tr><th>Asset</th><th>Inspector highlights</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>CardTemplate</code></td>
+              <td>Per-face foldouts with artwork thumbnail, type line, keyword pills, stats, and ability counts. Select button pings the <code>CardDefinition</code> asset. Validation for missing ID, layout, or null faces.</td>
+            </tr>
+            <tr>
+              <td><code>CardDefinition</code></td>
+              <td>Artwork thumbnail, card name, type line, rarity/set badge, rules text, flavor text, stats + ability count bar.</td>
+            </tr>
+            <tr>
+              <td><code>DeckDefinition</code></td>
+              <td>Aggregated deck list with copy-count badges (amber at ≥4), total card count footer, inline format validation panel with a <code>DeckFormatDefinition</code> picker and Validate Now button.</td>
+            </tr>
+            <tr>
+              <td><code>GameDefinition</code></td>
+              <td>Setup checklist with ✓ / ⚠ / ✗ status rows for every required field: turn structure, stack zone, per-player zones, library and hand zones, players, win conditions, SBAs, and opening hand.</td>
+            </tr>
+            <tr>
+              <td><code>ZoneDefinition</code></td>
+              <td>Ownership badge (PerPlayer / Shared / PerTeam), flag chips (Stack / Active / Ephemeral), property grid for ordering/visibility/entry position, and a capacity row.</td>
+            </tr>
+            <tr>
+              <td><code>StatDefinition</code></td>
+              <td>Stat name and abbreviation badge. Visual range bar with min/max labels and a white tick mark at the default value. Plain-English clamping summary. Validates inverted min/max and out-of-bounds defaults.</td>
+            </tr>
+            <tr>
+              <td><code>KeywordDefinition</code></td>
+              <td>Keyword name in large type, optional short-code badge, Evergreen badge, italic reminder text, and a <em>Card display</em> preview showing <code>FormatReminderLine()</code> output.</td>
+            </tr>
+            <tr>
+              <td><code>KeywordLibrary</code></td>
+              <td>Keyword count badge, evergreen vs set-specific breakdown, scrollable pill grid (green = evergreen, blue = standard), and an embedded <strong>Generate Library</strong> button.</td>
+            </tr>
+            <tr>
+              <td><code>FaceLayoutType</code></td>
+              <td>Property grid with ✓ / ✗ indicators for every boolean rule: can cast non-default face, switches during play, retains counters and tapped state on switch.</td>
+            </tr>
+            <tr>
+              <td><code>CounterType</code></td>
+              <td>Counter name, italic description, and a stat-effect row showing which stat is modified and the per-counter delta with a coloured +/− sign (green positive, red negative).</td>
+            </tr>
+            <tr>
+              <td><code>DeckFormatDefinition</code></td>
+              <td>Format name, plain-English rules grid (deck size range, copy limit, set legality), and inline set-code pills when set constraints are enabled.</td>
+            </tr>
+            <tr>
+              <td><code>RarityDefinition</code></td>
+              <td>Rarity name displayed in its own configured colour, hex code label, and a full-width colour swatch bar.</td>
+            </tr>
+            <tr>
+              <td><code>SetDefinition</code></td>
+              <td>Set name with a set-code badge matching the style used in <code>DeckFormatDefinitionEditor</code> pills, plus release date.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 id="generators">Library generators</h2>
+        <p>Two generator tools scan the project's <code>AssetDatabase</code> and auto-populate catalog assets. Run them after creating or renaming assets of the relevant type.</p>
+
+        <h3 id="keyword-generator">Keyword Library Generator</h3>
+        <p>Finds every <code>KeywordDefinition</code> in the project, sorts alphabetically by <code>KeywordName</code>, and writes them into a <code>KeywordLibrary</code> asset.</p>
+
+        <p><strong>Two ways to run it:</strong></p>
+        <ol>
+          <li><strong>Inspector button (recommended):</strong> Select a <code>KeywordLibrary</code> asset → click <strong>Generate Library</strong> in the custom inspector panel.</li>
+          <li><strong>Menu bar:</strong> Select a <code>KeywordLibrary</code> asset → <em>Card Game Engine → Generate Keyword Library</em>. The menu item is greyed out when no library is selected.</li>
+        </ol>
+
+        <h3 id="registry-generator">Asset Registry Generator</h3>
+        <p>Finds all registered asset types (<code>CardTemplate</code>, <code>StatDefinition</code>, <code>CounterType</code>, <code>CardStateFlag</code>, <code>ZoneDefinition</code>, <code>ResourceType</code>, <code>ResourceSubtype</code>), sorts each group by its lookup key, and writes them into a <code>GameAssetRegistry</code> asset used by <code>NoCodeBootstrapper</code> and the serialization system.</p>
+
+        <p><strong>To run:</strong> Select a <code>GameAssetRegistry</code> asset → <em>Card Game Engine → Generate Asset Registry</em>. A summary dialog confirms how many assets of each type were registered.</p>
+
+        <p>See <a href="asset-registry.html">Asset Registry</a> for full details on how the registry integrates with the rest of the engine.</p>
+
+        <h2 id="validation">Inline validation reference</h2>
+        <p>Every custom inspector surfaces configuration problems as Unity <code>HelpBox</code> messages — no need to run the game to find broken references. Common warnings:</p>
+
+        <table>
+          <thead><tr><th>Warning</th><th>Asset</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>TemplateId / StatName / ZoneName / CounterName is empty</td>
+              <td>Various definitions</td>
+              <td>Assign a unique string ID — asset resolution via <code>GameAssetRegistry</code> uses these as lookup keys.</td>
+            </tr>
+            <tr>
+              <td>Face 0 is null</td>
+              <td><code>CardTemplate</code></td>
+              <td>Assign a <code>CardDefinition</code> to the first face slot — without it no <code>CardInstance</code> can be created.</td>
+            </tr>
+            <tr>
+              <td>No FaceLayoutType assigned</td>
+              <td><code>CardTemplate</code></td>
+              <td>Assign a layout asset — face-switching behaviour is undefined without one.</td>
+            </tr>
+            <tr>
+              <td>Stack zone missing / no per-player zones</td>
+              <td><code>GameDefinition</code></td>
+              <td>Configure the required zones in <em>Per-Player Zones</em> and <em>Shared Zones</em> arrays.</td>
+            </tr>
+            <tr>
+              <td>MinValue &gt; MaxValue</td>
+              <td><code>StatDefinition</code></td>
+              <td>Invert the bounds — <code>Clamp()</code> will always return MinValue when this is reversed.</td>
+            </tr>
+            <tr>
+              <td>Set constraints on with no sets listed</td>
+              <td><code>DeckFormatDefinition</code></td>
+              <td>Add at least one <code>SetDefinition</code> to the Allowed Sets array, or disable set constraints.</td>
+            </tr>
+            <tr>
+              <td>Stat Effect enabled but no StatDefinition</td>
+              <td><code>CounterType</code></td>
+              <td>Assign a <code>StatDefinition</code> to the Stat Effect field, or disable Has Stat Effect.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="ability-editor.html">← Ability Editor</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="api-reference.html">API Reference →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#card-preview">Card Preview window</a>
+          <a href="#inspectors">Custom inspectors</a>
+          <a href="#generators">Library generators</a>
+          <a href="#keyword-generator" class="toc-sub">Keyword Library</a>
+          <a href="#registry-generator" class="toc-sub">Asset Registry</a>
+          <a href="#validation">Validation reference</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>
