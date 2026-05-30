@@ -1,0 +1,145 @@
+---
+layout: base.njk
+title: "Localization"
+description: "Translate card names, rules text, and UI strings with LocalizedString, CardLocalizationTable, and LocalizationService — zero breaking changes to existing assets."
+pageKey: localization
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Localization</div>
+          <h1>Localization</h1>
+          <p class="doc-lead">Translate card names, rules text, zone names, and phase names at runtime with a single active locale table — all without touching existing assets or breaking any existing API calls.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The localization system is built around three types:</p>
+        <ul>
+          <li><strong><code>LocalizedString</code></strong> — a serializable struct that pairs a lookup key with an English fallback. Stored in fields that formerly held a plain <code>string</code>.</li>
+          <li><strong><code>CardLocalizationTable</code></strong> — a ScriptableObject that maps keys to translated strings for one locale (e.g. French, Japanese).</li>
+          <li><strong><code>LocalizationService</code></strong> — a static class that holds the active table and resolves keys at call time.</li>
+        </ul>
+        <p>The design is <strong>opt-in and non-breaking</strong>. All existing string fields on <code>CardDefinition</code>, <code>PhaseDefinition</code>, <code>StepDefinition</code>, and <code>ZoneDefinition</code> remain unchanged. Separate <em>key</em> fields and <code>Localized*</code> properties were added alongside them. Code that references <code>CardName</code>, <code>PhaseName</code>, etc. continues to compile and run without modification.</p>
+
+        <div class="callout callout-tip">
+          Leave key fields empty on any asset to always display the raw fallback value. No locale table is required — the system degrades gracefully to English-only when no table is active.
+        </div>
+
+        <h2 id="locale-table">Creating a locale table</h2>
+        <p>Create a <code>CardLocalizationTable</code> asset via <em>Card Game Engine → Localization → Localization Table</em>. Set the <strong>Locale Code</strong> (e.g. <code>fr</code>, <code>ja</code>, <code>zh-CN</code>) and <strong>Locale Name</strong> (e.g. <em>French</em>) in the Inspector, then add entries:</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Key</code></td><td>The lookup key. Convention: <code>category.identifier.field</code>, e.g. <code>card.lightning-bolt.name</code>.</td></tr>
+            <tr><td><code>Value</code></td><td>The translated string for this locale.</td></tr>
+          </tbody>
+        </table>
+
+        <p>A project can contain multiple locale tables — one per language. Only one table is active at a time; swap it via <code>LocalizationService.SetLocale()</code>.</p>
+
+        <h2 id="activating">Activating a locale</h2>
+        <p>Call <code>LocalizationService.SetLocale()</code> once at game startup, or when the player changes their language setting:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Assign a CardLocalizationTable ScriptableObject reference in the Inspector.
+[SerializeField] private CardLocalizationTable _frenchTable;
+
+void Start()
+{
+    LocalizationService.SetLocale(_frenchTable);
+}
+
+// To revert to raw fallback values:
+LocalizationService.SetLocale(null);</code></pre>
+        </div>
+
+        <h2 id="reading">Reading localized values</h2>
+        <p>Every affected ScriptableObject gains a <code>Localized*</code> property that resolves through the active table automatically:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// CardDefinition
+string displayName  = card.CurrentFace.LocalizedCardName;
+string displayRules = card.CurrentFace.LocalizedRulesText;
+string displayFlavor = card.CurrentFace.LocalizedFlavorText;
+
+// PhaseDefinition
+string phaseName = phase.LocalizedPhaseName;
+
+// StepDefinition
+string stepName = step.LocalizedStepName;
+
+// ZoneDefinition
+string zoneName = zone.LocalizedZoneName;</code></pre>
+        </div>
+        <p>When no table is active, or when the key field is empty, these properties return the original English fallback stored on the asset — exactly as before.</p>
+
+        <h2 id="localized-string">Using LocalizedString directly</h2>
+        <p><code>LocalizedString</code> is a serializable struct you can embed in your own ScriptableObjects or MonoBehaviours:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>[SerializeField] private LocalizedString _tooltip;
+
+// In a UI script:
+tooltipLabel.text = _tooltip.Resolve();  // or just: _tooltip (implicit string conversion)</code></pre>
+        </div>
+
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Key</code></td><td>The lookup key used to find this string in the active table.</td></tr>
+            <tr><td><code>Fallback</code></td><td>The default (English) value shown in the Inspector and used when no table entry exists.</td></tr>
+            <tr><td><code>Resolve()</code></td><td>Returns the translated value if the active table contains the key; otherwise returns <code>Fallback</code>.</td></tr>
+            <tr><td><code>implicit string</code></td><td>Calls <code>Resolve()</code> automatically wherever a plain <code>string</code> is expected.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="service-api">LocalizationService API</h2>
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>SetLocale(table)</code></td><td>Activates a locale table. Pass <code>null</code> to revert to raw fallback values.</td></tr>
+            <tr><td><code>ActiveTable</code></td><td>The currently active <code>CardLocalizationTable</code>, or <code>null</code>.</td></tr>
+            <tr><td><code>ActiveLocaleCode</code></td><td>The IETF language tag of the active table (e.g. <code>"fr"</code>), or <code>null</code>.</td></tr>
+            <tr><td><code>Resolve(LocalizedString)</code></td><td>Resolves a <code>LocalizedString</code> struct.</td></tr>
+            <tr><td><code>Resolve(key, fallback)</code></td><td>Resolves a raw key/fallback pair — useful when the key is stored separately.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="key-convention">Key naming convention</h2>
+        <p>Use the pattern <code>category.identifier.field</code>, keeping identifiers lowercase with hyphens:</p>
+        <ul>
+          <li><code>card.lightning-bolt.name</code></li>
+          <li><code>card.lightning-bolt.rules</code></li>
+          <li><code>card.lightning-bolt.flavor</code></li>
+          <li><code>phase.main.name</code></li>
+          <li><code>zone.graveyard.name</code></li>
+        </ul>
+        <p>Consistent keys make it straightforward to export a master key list and hand it to translators.</p>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="replay-viewer.html">← Replay Viewer</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="sound-hooks.html">Sound Hooks →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#locale-table">Creating a locale table</a>
+          <a href="#activating">Activating a locale</a>
+          <a href="#reading">Reading localized values</a>
+          <a href="#localized-string">LocalizedString</a>
+          <a href="#service-api">LocalizationService API</a>
+          <a href="#key-convention">Key convention</a>
+        </nav>
+      </aside>
+</article>

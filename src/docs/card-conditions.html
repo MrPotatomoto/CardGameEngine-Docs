@@ -1,0 +1,119 @@
+---
+layout: base.njk
+title: "Card Conditions"
+description: "Track per-turn marked damage, zone-entry turn, and summoning sickness on CardInstance with DamageMarked, TurnEnteredZone, and HasSummoningSickness."
+pageKey: card-conditions
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Card Conditions</div>
+          <h1>Card Conditions</h1>
+          <p class="doc-lead">Three new members on <code>CardInstance</code> — <code>DamageMarked</code>, <code>TurnEnteredZone</code>, and <code>HasSummoningSickness()</code> — give your SBAs and combat system what they need to enforce lethal-damage destruction and summoning-sickness restrictions.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Previously, tracking per-turn combat damage or whether a card could attack required custom game-specific fields. These three additions bake the most common conditions directly into <code>CardInstance</code> so they are available to every system without duplicating logic.</p>
+
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>DamageMarked</code></td><td><code>int</code> (read-only)</td><td>Marked combat damage accumulated this turn. Reset by <code>ClearDamage()</code>.</td></tr>
+            <tr><td><code>MarkDamage(int)</code></td><td>method</td><td>Adds marked damage. Negative amounts are ignored.</td></tr>
+            <tr><td><code>ClearDamage()</code></td><td>method</td><td>Resets <code>DamageMarked</code> to zero. Call during end-of-turn cleanup.</td></tr>
+            <tr><td><code>TurnEnteredZone</code></td><td><code>int</code></td><td>The turn number when this card most recently entered a zone. Set automatically by <code>ZoneManager.Transfer()</code>.</td></tr>
+            <tr><td><code>HasSummoningSickness(int, KeywordDefinition?)</code></td><td><code>bool</code></td><td>Returns <code>true</code> when the card entered a zone this turn and lacks Haste.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="damage">Marked damage</h2>
+        <p>Marked damage is tracked separately from permanent stat values because it:</p>
+        <ul>
+          <li>Resets each turn (at end-of-turn cleanup, not end-of-phase).</li>
+          <li>Needs to be queried efficiently by SBAs on every card in play.</li>
+          <li>Is conceptually distinct from a card's toughness stat — it is not a modifier applied to a stat; it is an accumulator that is compared against a stat.</li>
+        </ul>
+
+        <h3>Applying damage</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// In a combat damage step:
+blocker.MarkDamage(attacker.GetStat(_powerStat));
+attacker.MarkDamage(blocker.GetStat(_powerStat));
+
+// Check against toughness in an SBA:
+int toughness = card.GetStat(_toughnessStat);
+if (card.DamageMarked >= toughness)
+    DestroyCard(card);</code></pre>
+        </div>
+
+        <h3>Clearing damage</h3>
+        <p>Call <code>ClearDamage()</code> on every permanent during the end-of-turn cleanup step, or whenever your rules remove damage from cards:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// In your end-of-turn cleanup auto-action or effect:
+foreach (var card in battlefieldZone.Cards)
+    card.ClearDamage();</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <strong>Trample and deathtouch:</strong> If your game rules assign damage in excess of toughness (trample) or treat any damage as lethal (deathtouch), implement those rules in your combat system before calling <code>MarkDamage</code> — the engine accumulates whatever value you pass in.
+        </div>
+
+        <h2 id="turn-entered">TurnEnteredZone</h2>
+        <p><code>TurnEnteredZone</code> is set automatically by <code>ZoneManager.Transfer()</code> each time a card moves to a new zone. It holds the value of <code>GameContext.TurnNumber</code> at the moment of entry.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// After a Transfer(), TurnEnteredZone is set:
+zoneManager.Transfer(card, battlefield, source);
+// card.TurnEnteredZone == context.TurnNumber</code></pre>
+        </div>
+        <p>Because zone transfers during setup (e.g. <code>DeckDefinition.Populate()</code>) happen before <code>TurnNumber</code> is incremented from 0, cards that enter the game during setup will have <code>TurnEnteredZone = 0</code> — which means <code>HasSummoningSickness</code> will return <code>false</code> from turn 1 onward unless the card re-enters a zone mid-game. Adjust your combat system if this is not the behaviour you want.</p>
+
+        <h2 id="summoning-sickness">HasSummoningSickness</h2>
+        <p>A card has summoning sickness when it entered a zone on the current turn and does not have Haste:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Declare a reference to your Haste keyword asset:
+[SerializeField] private KeywordDefinition _hasteKeyword;
+
+// In your combat system — filter attackers:
+var validAttackers = battlefieldZone.Cards
+    .Where(c => c.Controller == activePlayer
+             &amp;&amp; !c.HasSummoningSickness(context.TurnNumber, _hasteKeyword));
+
+// In a game with no Haste equivalent:
+bool sick = card.HasSummoningSickness(context.TurnNumber, hasteKeyword: null);</code></pre>
+        </div>
+
+        <table class="api-table">
+          <thead><tr><th>Parameter</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>currentTurn</code></td><td>Pass <code>GameContext.TurnNumber</code>. The method compares this to <code>TurnEnteredZone</code>.</td></tr>
+            <tr><td><code>hasteKeyword</code></td><td>The <code>KeywordDefinition</code> asset that grants immunity to summoning sickness. Pass <code>null</code> if your game has no such keyword — sickness will always apply to newly entered cards.</td></tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="sound-hooks.html">← Sound Hooks</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="turn-events.html">Turn Events &amp; Bus →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#damage">Marked damage</a>
+          <a href="#turn-entered">TurnEnteredZone</a>
+          <a href="#summoning-sickness">HasSummoningSickness</a>
+        </nav>
+      </aside>
+</article>

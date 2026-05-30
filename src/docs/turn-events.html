@@ -1,0 +1,121 @@
+---
+layout: base.njk
+title: "Turn Events & Bus"
+description: "All turn, phase, step, priority, and zone events are now published to the EventBus — triggered abilities and audio hooks can subscribe to the full event stream."
+pageKey: turn-events
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Turn Events &amp; Bus</div>
+          <h1>Turn Events &amp; Bus</h1>
+          <p class="doc-lead">Every game event — turn boundaries, phase transitions, step entries, priority grants, zone transfers, and stack operations — now flows through both the <code>ReplacementEffectLayer</code> and the <code>EventBus</code>. Triggered abilities, audio hooks, and UI listeners can subscribe to the full event stream.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Prior to v6.0, all turn structure and zone events went through <code>ReplacementEffectLayer.Process()</code> only. The <code>EventBus</code> received stack events when abilities were pushed, but turn, phase, step, and priority events were never published to it. This meant triggered abilities could not fire on phase transitions, and audio hooks could not react to turn boundaries.</p>
+
+        <p>v6.0 introduces <code>FireEvent&lt;T&gt;()</code> on <code>GameStateMachine</code> — an internal helper that routes every event through the full pipeline:</p>
+        <ol>
+          <li><strong><code>ReplacementEffectLayer.Process()</code></strong> — replacement effects may transform or suppress the event before anything reacts.</li>
+          <li><strong><code>EventBus.Publish()</code></strong> — broadcasts the (possibly modified) event to all subscribers, so triggered abilities queue up and audio hooks fire.</li>
+        </ol>
+
+        <div class="callout callout-tip">
+          The EventBus walks up the class hierarchy when dispatching, so subscribing to a base type (e.g. <code>GameEvent</code>) receives every event. Subscribe to a specific type (e.g. <code>TurnStartedEvent</code>) for targeted reactions.
+        </div>
+
+        <h2 id="events">Turn structure events</h2>
+        <p>All of these events are now published to the <code>EventBus</code> in addition to being processed by the <code>ReplacementEffectLayer</code>:</p>
+
+        <table class="api-table">
+          <thead><tr><th>Event type</th><th>When it fires</th></tr></thead>
+          <tbody>
+            <tr><td><code>TurnStartedEvent</code></td><td>Before the first phase of each turn.</td></tr>
+            <tr><td><code>TurnEndedEvent</code></td><td>After the last phase of each turn.</td></tr>
+            <tr><td><code>PhaseEnteredEvent</code></td><td>When a phase begins (after the skip check).</td></tr>
+            <tr><td><code>PhaseExitedEvent</code></td><td>When a phase ends.</td></tr>
+            <tr><td><code>PhaseSkippedEvent</code></td><td>When a phase is skipped by a replacement or skip rule.</td></tr>
+            <tr><td><code>StepEnteredEvent</code></td><td>When a step begins (after the skip check).</td></tr>
+            <tr><td><code>StepExitedEvent</code></td><td>When a step ends.</td></tr>
+            <tr><td><code>StepSkippedEvent</code></td><td>When a step is skipped.</td></tr>
+            <tr><td><code>PriorityGrantedEvent</code></td><td>Each time a player receives priority in an APNAP round.</td></tr>
+            <tr><td><code>PriorityPassedEvent</code></td><td>Each time a player passes priority.</td></tr>
+            <tr><td><code>CardEnteredZoneEvent</code></td><td>After a card arrives in its new zone via <code>ZoneManager.Transfer()</code>.</td></tr>
+            <tr><td><code>CardLeftZoneEvent</code></td><td>After a card leaves its previous zone via <code>ZoneManager.Transfer()</code>.</td></tr>
+            <tr><td><code>StackEntryResolvedEvent</code></td><td>After the top stack entry executes successfully.</td></tr>
+            <tr><td><code>StackEntryFizzledEvent</code></td><td>After the top stack entry fizzles (targets invalid, or no effect).</td></tr>
+            <tr><td><code>StackEntryPushedEvent</code></td><td>After a triggered ability is placed on the stack.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="subscribing">Subscribing to events</h2>
+        <p>Subscribe via <code>EventBus.Subscribe&lt;T&gt;()</code> at any point after the <code>GameContext</code> is created. Always unsubscribe when you no longer need the events:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Subscribe in session setup:
+context.EventBus.Subscribe&lt;TurnStartedEvent&gt;(OnTurnStarted);
+context.EventBus.Subscribe&lt;CardEnteredZoneEvent&gt;(OnCardEnteredZone);
+
+// Handlers:
+private void OnTurnStarted(TurnStartedEvent e)
+{
+    Debug.Log($"Turn {e.TurnNumber} — active player: {e.ActivePlayer.Name}");
+}
+
+private void OnCardEnteredZone(CardEnteredZoneEvent e)
+{
+    Debug.Log($"{e.Card} entered {e.Destination.Definition.ZoneName}");
+}
+
+// Unsubscribe when the session ends:
+context.EventBus.Unsubscribe&lt;TurnStartedEvent&gt;(OnTurnStarted);
+context.EventBus.Unsubscribe&lt;CardEnteredZoneEvent&gt;(OnCardEnteredZone);</code></pre>
+        </div>
+
+        <h2 id="triggered-abilities">Triggered abilities on phase transitions</h2>
+        <p>Because turn and phase events now reach the <code>EventBus</code>, you can register triggered abilities with the <code>TriggerRegistry</code> that fire on phase entry or turn start. The trigger fires, queues up in the registry, and <code>RunSBAsAndDrainTriggers()</code> pushes it to the stack (or executes it immediately if <code>BypassesStack = true</code>) in the same window as any other trigger.</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Example: a triggered ability that fires at the start of your Upkeep step.
+// Wire this up in TriggeredAbilityDefinition assets by setting the trigger
+// condition to check for StepEnteredEvent with the Upkeep step definition.</code></pre>
+        </div>
+
+        <div class="callout callout-warning">
+          <strong>Ordering:</strong> The <code>ReplacementEffectLayer</code> always runs before the <code>EventBus</code>. A replacement effect can modify or suppress an event before any triggered ability or audio hook sees it. This ordering is intentional and matches Magic: the Gathering's rules architecture.
+        </div>
+
+        <h2 id="clearing">Session cleanup</h2>
+        <p>Call <code>EventBus.Clear()</code> when tearing down a game session to remove all subscriptions and free all handler references:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// In your session teardown:
+context.EventBus.Clear();</code></pre>
+        </div>
+        <p>Alternatively, individually unsubscribe each handler if you want to reuse the <code>GameContext</code> across multiple games in the same session (e.g. in a best-of-three match).</p>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="card-conditions.html">← Card Conditions</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="format-legality.html">Format Legality →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#events">Turn structure events</a>
+          <a href="#subscribing">Subscribing to events</a>
+          <a href="#triggered-abilities">Triggered abilities</a>
+          <a href="#clearing">Session cleanup</a>
+        </nav>
+      </aside>
+</article>

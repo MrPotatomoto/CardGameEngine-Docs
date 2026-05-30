@@ -105,6 +105,17 @@
         </div>
 
         <div class="nav-section">
+          <span class="nav-section-label">New in v6.0</span>
+          <ul>
+            <li><a href="localization.html"{% if pageKey == "localization" %} class="active"{% endif %}>Localization</a></li>
+            <li><a href="sound-hooks.html"{% if pageKey == "sound-hooks" %} class="active"{% endif %}>Sound Hooks</a></li>
+            <li><a href="card-conditions.html"{% if pageKey == "card-conditions" %} class="active"{% endif %}>Card Conditions</a></li>
+            <li><a href="turn-events.html"{% if pageKey == "turn-events" %} class="active"{% endif %}>Turn Events &amp; Bus</a></li>
+            <li><a href="format-legality.html"{% if pageKey == "format-legality" %} class="active"{% endif %}>Format Legality</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
           <span class="nav-section-label">Reference</span>
           <ul>
             <li><a href="api-reference.html"{% if pageKey == "api-reference" %} class="active"{% endif %}>API Reference</a></li>

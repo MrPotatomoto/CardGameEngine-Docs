@@ -1,0 +1,140 @@
+---
+layout: base.njk
+title: "Sound Hooks"
+description: "Route game events to audio clips automatically with AudioEventDefinition, GameAudioProfile, and GameAudioService — no hard-coded event handlers required."
+pageKey: sound-hooks
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Sound Hooks</div>
+          <h1>Sound Hooks</h1>
+          <p class="doc-lead">Map any <code>GameEvent</code> type to an audio clip pool using ScriptableObject assets. <code>GameAudioService</code> listens to the <code>EventBus</code> and fires a callback whenever a matching event is published — your audio manager decides how to play it.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The sound hook system consists of three types:</p>
+        <ul>
+          <li><strong><code>AudioEventDefinition</code></strong> — a ScriptableObject describing a sound: a pool of clips (one picked at random each play), volume, pitch with optional variance, loop flag, and 3-D spatialization settings.</li>
+          <li><strong><code>GameAudioProfile</code></strong> — a ScriptableObject containing an ordered list of <code>SoundTriggerRule</code>s, each pairing a game-event type name with an <code>AudioEventDefinition</code>.</li>
+          <li><strong><code>GameAudioService</code></strong> — a runtime service (not a MonoBehaviour) that subscribes to the <code>EventBus</code> and invokes your playback callback whenever a rule matches. Dispose it when the session ends.</li>
+        </ul>
+        <p>The service is <strong>presentation-layer agnostic</strong>: it resolves which audio event to play, then hands the definition to a callback. Your <code>AudioSource</code> management, pooling, and 3-D positioning remain entirely in your project code.</p>
+
+        <h2 id="audio-event">AudioEventDefinition</h2>
+        <p>Create via <em>Card Game Engine → Audio → Audio Event</em>.</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Clips</code></td><td>—</td><td>One or more <code>AudioClip</code>s. A random clip is chosen each play for natural variation.</td></tr>
+            <tr><td><code>Volume</code></td><td>1.0</td><td>Playback volume (0–1).</td></tr>
+            <tr><td><code>Pitch</code></td><td>1.0</td><td>Base playback pitch. Values below 1 slow the clip; above 1 speed it up.</td></tr>
+            <tr><td><code>Pitch Variance</code></td><td>0.0</td><td>Random offset applied each play: final pitch = Pitch ± variance. Try 0.05–0.1 for a natural feel.</td></tr>
+            <tr><td><code>Loop</code></td><td>false</td><td>Whether the clip loops. Useful for ambient tracks.</td></tr>
+            <tr><td><code>Spatial Blend</code></td><td>0.0</td><td>0 = fully 2-D, 1 = fully 3-D. Keep at 0 for UI and card sounds.</td></tr>
+            <tr><td><code>Min Distance</code></td><td>1</td><td>Distance at which audio plays at full volume (3-D only).</td></tr>
+            <tr><td><code>Max Distance</code></td><td>500</td><td>Distance at which audio is inaudible (3-D only).</td></tr>
+          </tbody>
+        </table>
+
+        <p>At runtime, read the resolved values from the definition's properties:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>AudioClip clip = def.Clip;    // random pick from the pool each call
+float volume   = def.Volume;
+float pitch    = def.Pitch;   // base + random variance; call each play</code></pre>
+        </div>
+
+        <h2 id="profile">GameAudioProfile</h2>
+        <p>Create via <em>Card Game Engine → Audio → Audio Profile</em>. Add <code>SoundTriggerRule</code> entries in the Inspector:</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Game Event Type Name</code></td><td>Fully-qualified C# type name of the <code>GameEvent</code> that triggers playback, e.g. <code>CardGameEngine.TurnStartedEvent</code>. Using a base type matches all subtypes.</td></tr>
+            <tr><td><code>Audio Event</code></td><td>The <code>AudioEventDefinition</code> to play when this rule matches.</td></tr>
+          </tbody>
+        </table>
+
+        <p>Multiple rules may match the same event — all matching definitions fire in list order. Use a base type (e.g. <code>CardGameEngine.CardStateEvent</code>) to catch every event in a hierarchy with one rule.</p>
+
+        <h2 id="service">GameAudioService</h2>
+        <p>Create a <code>GameAudioService</code> when a game session starts and dispose it when the session ends:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// In your game-session controller:
+private GameAudioService _audioService;
+
+void StartSession(GameContext context, GameAudioProfile profile)
+{
+    _audioService = new GameAudioService(
+        context.EventBus,
+        profile,
+        PlayAudio);          // your callback
+}
+
+void EndSession()
+{
+    _audioService?.Dispose();
+    _audioService = null;
+}
+
+// Your playback callback — called on the Unity main thread.
+void PlayAudio(AudioEventDefinition def)
+{
+    var src = _audioSourcePool.Get();
+    src.clip         = def.Clip;
+    src.volume       = def.Volume;
+    src.pitch        = def.Pitch;
+    src.loop         = def.Loop;
+    src.spatialBlend = def.SpatialBlend;
+    src.Play();
+}</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          Type names in each rule are resolved to <code>System.Type</code> objects once at construction time, so the per-event matching loop is allocation-free during play. An editor warning is logged for any rule whose type name cannot be resolved — check the fully-qualified name if you see unexpected silence.
+        </div>
+
+        <h2 id="common-events">Common event type names</h2>
+        <table class="api-table">
+          <thead><tr><th>Effect</th><th>Type name</th></tr></thead>
+          <tbody>
+            <tr><td>Turn starts</td><td><code>CardGameEngine.TurnStartedEvent</code></td></tr>
+            <tr><td>Turn ends</td><td><code>CardGameEngine.TurnEndedEvent</code></td></tr>
+            <tr><td>Phase entered</td><td><code>CardGameEngine.PhaseEnteredEvent</code></td></tr>
+            <tr><td>Step entered</td><td><code>CardGameEngine.StepEnteredEvent</code></td></tr>
+            <tr><td>Priority granted</td><td><code>CardGameEngine.PriorityGrantedEvent</code></td></tr>
+            <tr><td>Card enters any zone</td><td><code>CardGameEngine.CardEnteredZoneEvent</code></td></tr>
+            <tr><td>Card leaves any zone</td><td><code>CardGameEngine.CardLeftZoneEvent</code></td></tr>
+            <tr><td>Spell cast (any)</td><td><code>CardGameEngine.SpellCastEvent</code></td></tr>
+            <tr><td>Stack entry resolved</td><td><code>CardGameEngine.StackEntryResolvedEvent</code></td></tr>
+            <tr><td>Any card state event</td><td><code>CardGameEngine.CardStateEvent</code> (base type — catches all subtypes)</td></tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="localization.html">← Localization</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="card-conditions.html">Card Conditions →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#audio-event">AudioEventDefinition</a>
+          <a href="#profile">GameAudioProfile</a>
+          <a href="#service">GameAudioService</a>
+          <a href="#common-events">Common event type names</a>
+        </nav>
+      </aside>
+</article>

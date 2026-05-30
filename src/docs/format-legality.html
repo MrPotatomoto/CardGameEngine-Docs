@@ -1,0 +1,140 @@
+---
+layout: base.njk
+title: "Format Legality"
+description: "Enforce banned and restricted card lists, set rotation, and deck size rules with DeckFormatDefinition, DeckDefinition.Validate(), and SetDefinition.RotationDate."
+pageKey: format-legality
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Format Legality</div>
+          <h1>Format Legality</h1>
+          <p class="doc-lead">Define banned and restricted card lists, enforce deck size limits, and track set rotation dates — all through <code>DeckFormatDefinition</code> ScriptableObject assets validated by <code>DeckDefinition.Validate()</code>.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The format legality system extends the existing <code>DeckFormatDefinition</code> + <code>DeckDefinition.Validate()</code> pipeline introduced in v5. v6.0 adds:</p>
+        <ul>
+          <li><strong>Banned cards list</strong> — cards that may not appear in any deck for this format.</li>
+          <li><strong>Restricted cards list</strong> — cards limited to exactly one copy per deck (e.g. Vintage restricted list).</li>
+          <li><strong>Rotation date on sets</strong> — <code>SetDefinition</code> now carries a <code>RotationDate</code> field so you can display when a set rotates and implement auto-rotation logic.</li>
+        </ul>
+
+        <h2 id="rotation-date">Set rotation dates</h2>
+        <p>Each <code>SetDefinition</code> asset now has a <strong>Rotation Date</strong> field (YYYY-MM-DD format) in its Identity section. Leave it empty for sets that never rotate (eternal-legal sets).</p>
+
+        <table class="api-table">
+          <thead><tr><th>Property</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>RotationDate</code></td><td>Rotation date string in YYYY-MM-DD format. Empty when the set does not rotate.</td></tr>
+            <tr><td><code>HasRotationDate</code></td><td><code>true</code> when a non-empty rotation date is set.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>if (set.HasRotationDate)
+    rotationLabel.text = $"Rotates {set.RotationDate}";
+else
+    rotationLabel.text = "Eternal legal";</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          The engine stores the rotation date as a string and does not compare it to the current calendar date automatically. To enforce automatic set rotation (e.g. filter out sets whose rotation date has passed), compare <code>RotationDate</code> to <code>DateTime.Now</code> in your format-setup code and remove rotated sets from the <code>DeckFormatDefinition.AllowedSets</code> list.
+        </div>
+
+        <h2 id="banned-restricted">Banned &amp; restricted lists</h2>
+        <p>Open any <code>DeckFormatDefinition</code> asset. The new <strong>Banned &amp; Restricted</strong> header exposes two lists:</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Banned Cards</code></td><td>Card templates that may not appear in any deck for this format. Takes precedence over the Restricted list — if a card is on both lists it is simply banned.</td></tr>
+            <tr><td><code>Restricted Cards</code></td><td>Card templates limited to exactly one copy per deck. More than one copy produces a violation.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="validation">Running validation</h2>
+        <p>Call <code>DeckDefinition.Validate(format)</code> to receive a list of every violation found. An empty list means the deck is legal:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>IReadOnlyList&lt;DeckViolation&gt; violations = myDeck.Validate(standardFormat);
+
+if (violations.Count == 0)
+{
+    StartGame();
+}
+else
+{
+    foreach (var v in violations)
+        ShowError(v.Description);
+}</code></pre>
+        </div>
+
+        <h2 id="violations">Violation types</h2>
+        <p>Each <code>DeckViolation</code> carries a <code>Type</code> (a <code>DeckViolationType</code> enum value), a human-readable <code>Description</code>, and (where applicable) the offending <code>OffendingTemplate</code>, <code>ActualCount</code>, and <code>AllowedCount</code>.</p>
+
+        <p>The validation checks run in this order:</p>
+        <ol>
+          <li><strong>Deck size</strong> — total card count vs <code>MinDeckSize</code> / <code>MaxDeckSize</code>.</li>
+          <li><strong>Banned cards</strong> — any card on the banned list fails immediately; further copy-count checks are skipped for that card.</li>
+          <li><strong>Restricted cards</strong> — cards on the restricted list may appear at most once.</li>
+          <li><strong>Copy limit</strong> — non-restricted cards may not exceed <code>MaxCopiesOfAnyCard</code>.</li>
+          <li><strong>Set legality</strong> — when <code>EnforceSetConstraints</code> is enabled, each card must belong to an allowed set.</li>
+        </ol>
+
+        <table class="api-table">
+          <thead><tr><th>Violation type</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>TooFewCards</code></td><td>Deck is below the format's minimum size.</td></tr>
+            <tr><td><code>TooManyCards</code></td><td>Deck exceeds the format's maximum size.</td></tr>
+            <tr><td><code>BannedCard</code></td><td>A card on the banned list appears in the deck.</td></tr>
+            <tr><td><code>RestrictedCardExceedsLimit</code></td><td>A restricted card appears more than once.</td></tr>
+            <tr><td><code>TooManyCopiesOfCard</code></td><td>A non-restricted card exceeds the per-card copy limit.</td></tr>
+            <tr><td><code>CardNotInAllowedSet</code></td><td>A card's set is not in the format's allowed-set list.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="helper-methods">Helper methods on DeckFormatDefinition</h2>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Check a single card without running a full deck validation:
+bool banned     = format.IsBanned(cardTemplate);
+bool restricted = format.IsRestricted(cardTemplate);
+bool setOk      = format.IsSetAllowed(set);
+
+// Read the lists:
+IReadOnlyList&lt;CardTemplate&gt; banned     = format.BannedCards;
+IReadOnlyList&lt;CardTemplate&gt; restricted = format.RestrictedCards;
+IReadOnlyList&lt;SetDefinition&gt; allowed   = format.AllowedSets;</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <code>IsBanned</code> and <code>IsRestricted</code> use reference equality (same ScriptableObject asset), so the <code>CardTemplate</code> in your deck entries must be the same asset reference as the one in the format lists — not a different asset for the same card.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="turn-events.html">← Turn Events &amp; Bus</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="api-reference.html">API Reference →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#rotation-date">Set rotation dates</a>
+          <a href="#banned-restricted">Banned &amp; restricted lists</a>
+          <a href="#validation">Running validation</a>
+          <a href="#violations">Violation types</a>
+          <a href="#helper-methods">Helper methods</a>
+        </nav>
+      </aside>
+</article>
