@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Node Graph Editor — Card Game Engine</title>
+  <meta name="description" content="Visualize and rewire ability asset trees as connected nodes in the Unity Editor using the Card Game Engine's Ability Graph window." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+            <li><a href="keywords.html">Keywords</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="stack.html">Stack &amp; Priority</a></li>
+            <li><a href="resources.html">Resources</a></li>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html">State-Based Actions</a></li>
+            <li><a href="win-conditions.html">Win Conditions</a></li>
+            <li><a href="deck-management.html">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
+            <li><a href="editor-tools.html">Editor Tools</a></li>
+            <li><a href="node-graph-editor.html" class="active">Node Graph Editor</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Node Graph Editor</div>
+          <h1>Node Graph Editor</h1>
+          <p class="doc-lead">Visualize and rewire your entire ability tree as a zoomable node canvas. See how an event filter connects to a triggered ability, which conditions guard it, and exactly what effects fire when it resolves — all in one view.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The <strong>Ability Graph</strong> window renders any <code>TriggeredAbilityDefinition</code>, <code>ActivatedAbilityDefinition</code>, or <code>SequenceEffectDefinition</code> as a tree of connected nodes. Each ScriptableObject in the asset-reference chain becomes one node; serialized object-reference fields become output ports with bezier wires drawn to the referenced asset's node.</p>
+        <p>The window reads the existing ScriptableObject graph — no separate data format or additional assets are created. Rewiring a connection in the graph updates the underlying serialized property, exactly as if you had used the object picker in the Inspector.</p>
+
+        <div class="callout callout-tip">
+          <strong>Complement, don't replace:</strong> The graph window excels at navigation and wiring overview. For creating new assets, configuring per-field parameters (damage amounts, zone filters, etc.), and adding array elements, continue using the structured <a href="ability-editor.html">Ability Editor</a> inspectors — they show the same fields with richer validation and one-click asset creation.
+        </div>
+
+        <h2 id="opening">Opening the window</h2>
+        <p>Three ways to open the Ability Graph:</p>
+        <ul>
+          <li><strong>Menu:</strong> <em>Window → Card Game Engine → Ability Graph</em></li>
+          <li><strong>Right-click:</strong> right-click any <code>TriggeredAbilityDefinition</code>, <code>ActivatedAbilityDefinition</code>, or <code>SequenceEffectDefinition</code> asset in the Project window and choose <em>Card Game Engine → Open in Ability Graph</em></li>
+          <li><strong>Auto-open:</strong> while the window is open, selecting a supported asset in the Project window automatically loads it — no extra clicks required</li>
+        </ul>
+
+        <h2 id="interface">Interface</h2>
+
+        <h3>Toolbar</h3>
+        <table class="api-table">
+          <thead><tr><th>Control</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Root asset name</strong> (left side)</td><td>Shows the name of the root ability or sequence currently displayed.</td></tr>
+            <tr><td><strong>F &nbsp;Fit</strong></td><td>Zooms and pans to fit all nodes in the visible canvas area. Also triggered by pressing <kbd>F</kbd>.</td></tr>
+            <tr><td><strong>Reset Layout</strong></td><td>Clears saved node positions and re-runs the automatic tree layout.</td></tr>
+            <tr><td><strong>Refresh</strong></td><td>Re-traverses the asset graph and rebuilds all nodes and wires. Use after making changes in the Inspector.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Canvas navigation</h3>
+        <table class="api-table">
+          <thead><tr><th>Input</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>Scroll wheel</td><td>Zoom in / out, centered on the mouse cursor.</td></tr>
+            <tr><td>Middle-mouse drag</td><td>Pan the canvas.</td></tr>
+            <tr><td>Alt + left-mouse drag</td><td>Pan the canvas (alternate).</td></tr>
+            <tr><td><kbd>F</kbd></td><td>Fit all nodes to the window.</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Cancel an in-progress port drag or node drag.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="nodes">Node anatomy</h2>
+        <p>Each node has two regions:</p>
+        <ul>
+          <li><strong>Header band</strong> — shows the asset's type name (formatted, e.g. "Deal Damage") and below it the asset's file name. The header is color-coded by base type (see color table below). A grey dot on the left edge marks the input port — the point where wires from parent nodes arrive.</li>
+          <li><strong>Port rows</strong> — one row per output port. Each row shows the field label on the right and a colored dot on the right edge. A bright dot indicates the slot is connected; a dim grey dot indicates it is empty (null reference). Drag from a bright or dim output dot to start rewiring.</li>
+        </ul>
+
+        <h3>Node colors by type</h3>
+        <table class="api-table">
+          <thead><tr><th>Color</th><th>Base type</th><th>Examples</th></tr></thead>
+          <tbody>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#2e6635;vertical-align:middle;margin-right:6px"></span>Dark green</td><td><code>EffectDefinition</code></td><td>DealDamage, DrawCard, MoveCard, Sequence, Conditional, ForEach</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#765712;vertical-align:middle;margin-right:6px"></span>Amber</td><td><code>ConditionDefinition</code></td><td>AlwaysTrue, ZoneContains, And, Or, Not</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#234285;vertical-align:middle;margin-right:6px"></span>Blue</td><td><code>EventFilterDefinition</code></td><td>CardEnteredZone, CardDamaged, TransferTag, And, Or, Not</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#4d2470;vertical-align:middle;margin-right:6px"></span>Purple</td><td><code>ValueSourceDefinition</code></td><td>ConstantValue, CompositeValue</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#1e5c6b;vertical-align:middle;margin-right:6px"></span>Teal</td><td><code>CollectionSourceDefinition</code></td><td>FilteredCollection</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#323234;vertical-align:middle;margin-right:6px"></span>Dark grey</td><td>Root abilities &amp; other types</td><td>TriggeredAbility, ActivatedAbility</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Port dot colors</h3>
+        <p>Output port dots inherit the color of the type they accept — a green dot on a "Then" port means it expects an <code>EffectDefinition</code>, a blue dot on "Event Filter" expects an <code>EventFilterDefinition</code>, and so on. Dim grey always means unconnected regardless of type.</p>
+
+        <h2 id="port-schema">Which ports appear on each node type</h2>
+        <table class="api-table">
+          <thead><tr><th>Asset type</th><th>Output ports</th></tr></thead>
+          <tbody>
+            <tr><td><code>TriggeredAbilityDefinition</code></td><td>Event Filter, Condition, Effect</td></tr>
+            <tr><td><code>ActivatedAbilityDefinition</code></td><td>Costs 0…N, Effect</td></tr>
+            <tr><td><code>SequenceEffectDefinition</code></td><td>Steps 0…N</td></tr>
+            <tr><td><code>ConditionalEffectDefinition</code></td><td>Condition, Then, Else</td></tr>
+            <tr><td><code>ForEachEffectDefinition</code></td><td>Collection, Effect Per Item</td></tr>
+            <tr><td><code>NotConditionDefinition</code></td><td>Inner</td></tr>
+            <tr><td><code>AndConditionDefinition</code> / <code>OrConditionDefinition</code></td><td>Conditions 0…N</td></tr>
+            <tr><td><code>NotEventFilterDefinition</code></td><td>Inner</td></tr>
+            <tr><td><code>AndEventFilterDefinition</code> / <code>OrEventFilterDefinition</code></td><td>Filters 0…N</td></tr>
+            <tr><td><code>CompositeValueDefinition</code></td><td>Left, Right</td></tr>
+            <tr><td>All other types (leaf effects, value sources, costs)</td><td>Input port only — no outputs</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="rewiring">Rewiring connections</h2>
+        <p>To change which asset a port points to:</p>
+        <ol>
+          <li>Hover over the output dot on the right edge of the port row — the cursor changes to indicate it is draggable.</li>
+          <li>Click and drag from the dot. A yellow bezier wire follows the mouse.</li>
+          <li>Release over any node whose asset type is compatible with the port (e.g., drag an "Effect" port onto any <code>EffectDefinition</code> node).</li>
+          <li>The serialized reference is updated immediately via <code>SerializedObject.ApplyModifiedProperties</code> and the graph rebuilds.</li>
+        </ol>
+        <p>Press <kbd>Esc</kbd> while dragging to cancel without making any change.</p>
+
+        <div class="callout callout-warning">
+          <strong>Array ports are view-only for adding elements:</strong> ports labeled "Steps 0", "Steps 1", etc. can be <em>reassigned</em> by dragging — this swaps which asset sits at that array index. But you cannot <em>add or remove</em> array elements through the graph. Use the <a href="ability-editor.html#sequence-effect-inspector">Sequence Effect inspector</a>'s "Create &amp; Add Step" button, or the standard Unity array controls in the default inspector, to change the array length.
+        </div>
+
+        <h2 id="interaction">Selecting and inspecting nodes</h2>
+        <ul>
+          <li><strong>Click a node</strong> — selects it and sets <code>Selection.activeObject</code>, so the Inspector updates to show that asset's fields.</li>
+          <li><strong>Double-click a node</strong> — pings the asset in the Project window, flashing its location in the folder tree.</li>
+          <li><strong>Right-click empty canvas</strong> — context menu with Select Root in Inspector, Fit to Window, Reset Layout, and Refresh Graph.</li>
+        </ul>
+
+        <h2 id="layout">Layout and persistence</h2>
+        <p>The first time a root asset is opened, the window runs an automatic tree layout: the root node starts at the top-left and child nodes are placed to the right in columns, stacked vertically within each column. The layout is a depth-first tree — shared assets referenced from multiple ports appear at their first-encountered position.</p>
+        <p>After you drag nodes to preferred positions, those positions are saved to <strong>EditorPrefs</strong> keyed by the root asset's GUID. Positions survive domain reloads, Unity restarts, and closing/reopening the window. They are machine-local and are not stored in the project's version control.</p>
+        <p>Click <strong>Reset Layout</strong> in the toolbar to clear saved positions and re-run the automatic layout at any time.</p>
+
+        <h2 id="workflow">Typical workflow</h2>
+        <ol>
+          <li>Create ability assets using the <a href="ability-editor.html">Ability Editor</a> inspector's "Create &amp; Assign" buttons. The graph is automatically populated from the references those buttons set.</li>
+          <li>Open the Ability Graph window. Select the root <code>TriggeredAbilityDefinition</code> or <code>ActivatedAbilityDefinition</code> in the Project window — the graph loads automatically.</li>
+          <li>Read the graph top-to-bottom: left column is the ability root, middle columns are effects and conditions, rightmost columns are leaf values.</li>
+          <li>To swap which effect fires for a branch (e.g., change a Conditional's Then branch), drag from the "Then" output dot onto the replacement <code>EffectDefinition</code> node.</li>
+          <li>Switch back to the Inspector (click the node, or use the right-click menu) to configure per-field parameters on the newly-wired asset.</li>
+          <li>Press <strong>F</strong> at any time to re-center the view.</li>
+        </ol>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="editor-tools.html">← Editor Tools</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="api-reference.html">API Reference →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#opening">Opening the window</a>
+          <a href="#interface">Interface</a>
+          <a href="#nodes">Node anatomy</a>
+          <a href="#port-schema">Port schema</a>
+          <a href="#rewiring">Rewiring connections</a>
+          <a href="#interaction">Selecting nodes</a>
+          <a href="#layout">Layout &amp; persistence</a>
+          <a href="#workflow">Typical workflow</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>
