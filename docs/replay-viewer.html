@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Replay Viewer — Card Game Engine</title>
+  <meta name="description" content="Inspect saved GameReplayLog JSON files in the Unity Editor. Step through the action timeline, filter by turn, and examine detailed state snapshots with the Replay Viewer window." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body class="docs-page">
+
+  <header class="top-nav">
+    <div class="nav-inner">
+      <button class="nav-mobile-menu" id="menu-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-mark">CGE</span>
+        <span class="logo-text">Card Game Engine</span>
+      </a>
+      <nav class="nav-links">
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="tutorials.html">Tutorials</a>
+        <a href="api-reference.html">API</a>
+        <a href="https://github.com/MrPotatomoto/CardGameEngine-Docs" class="nav-github" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="doc-search" placeholder="Search docs…" />
+        <kbd>/</kbd>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-section-label">Introduction</span>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="tutorials.html">Tutorials</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Core Concepts</span>
+          <ul>
+            <li><a href="cards.html">Cards</a></li>
+            <li><a href="zones.html">Zones</a></li>
+            <li><a href="effects.html">Effects</a></li>
+            <li><a href="events.html">Events</a></li>
+            <li><a href="abilities.html">Abilities</a></li>
+            <li><a href="keywords.html">Keywords</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Game Systems</span>
+          <ul>
+            <li><a href="stack.html">Stack &amp; Priority</a></li>
+            <li><a href="resources.html">Resources</a></li>
+            <li><a href="combat.html">Combat</a></li>
+            <li><a href="attachments.html">Attachments</a></li>
+            <li><a href="player-stats.html">Player Stats</a></li>
+            <li><a href="state-based-actions.html">State-Based Actions</a></li>
+            <li><a href="win-conditions.html">Win Conditions</a></li>
+            <li><a href="deck-management.html">Deck Management</a></li>
+            <li><a href="ai.html">AI Players</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Advanced</span>
+          <ul>
+            <li><a href="continuous-effects.html">Continuous Effects</a></li>
+            <li><a href="replacement-effects.html">Replacement Effects</a></li>
+            <li><a href="targeting.html">Targeting</a></li>
+            <li><a href="tokens.html">Tokens</a></li>
+            <li><a href="scry.html">Scry</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Tools</span>
+          <ul>
+            <li><a href="serialization.html">Serialization</a></li>
+            <li><a href="undo.html">Undo &amp; Checkpoints</a></li>
+            <li><a href="ability-editor.html">Ability Editor</a></li>
+            <li><a href="editor-tools.html">Editor Tools</a></li>
+            <li><a href="node-graph-editor.html">Node Graph Editor</a></li>
+            <li><a href="draft-simulator.html">Draft &amp; Booster</a></li>
+            <li><a href="replay-viewer.html" class="active">Replay Viewer</a></li>
+          </ul>
+        </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Reference</span>
+          <ul>
+            <li><a href="api-reference.html">API Reference</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="doc-main">
+      <article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Replay Viewer</div>
+          <h1>Replay Viewer</h1>
+          <p class="doc-lead">Load a <code>GameReplayLog</code> JSON file in the Unity Editor and step through every action your game recorded — seeing the turn, phase, player, card, and notes for each event alongside a snapshot of the game state at the start of the session.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The Replay Viewer is an editor-only window that opens <code>.json</code> files produced by <code>GameSerializer.ReplayToJson</code> at runtime. It presents a two-panel layout:</p>
+        <ul>
+          <li><strong>Timeline (left)</strong> — a scrollable list of every recorded action, preceded by a fixed <em>Initial State</em> row. Click any row to select it.</li>
+          <li><strong>Detail (right)</strong> — shows the full data for whichever row is selected: structured fields for an action, or zone / player / resource data for the initial state.</li>
+        </ul>
+        <p>Open via <em>Window → Card Game Engine → Replay Viewer</em>. The window requires a minimum size of 700 × 450 px.</p>
+
+        <h2 id="recording">Recording replays at runtime</h2>
+        <p>Attach a <code>ReplayLogger</code> component to your game session object before play begins. The logger listens to game events and appends an <code>ActionRecord</code> each time a player acts. When the session ends (or at any point during play), call:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>string json = GameSerializer.ReplayToJson(replayLog);
+File.WriteAllText(outputPath, json);</code></pre>
+        </div>
+        <p>The resulting JSON file can be opened directly in the Replay Viewer. No Unity project or asset database is required — the viewer parses the file from any path on disk.</p>
+
+        <h2 id="loading">Loading a file</h2>
+        <p>Click <strong>Open…</strong> in the toolbar. A standard file-picker opens; select any <code>.json</code> file produced by <code>GameSerializer.ReplayToJson</code>. On success, the filename and total action count appear in the toolbar and the timeline populates. If the file cannot be parsed, a dialog shows the error message from the parser.</p>
+
+        <div class="callout callout-tip">
+          The viewer holds the log in memory only — it does not import the file as a Unity asset. You can open logs from outside your project folder (e.g., from a build output directory or a QA report archive) without any asset-database changes.
+        </div>
+
+        <h2 id="toolbar">Toolbar</h2>
+        <table class="api-table">
+          <thead><tr><th>Control</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Open…</strong></td><td>Open a file-picker and load a <code>GameReplayLog</code> JSON file from disk.</td></tr>
+            <tr><td>Filename label</td><td>Shows the base filename of the currently loaded file, or "(untitled)" if loaded programmatically.</td></tr>
+            <tr><td>Action count</td><td>Total number of <code>ActionRecord</code> entries in the log (unfiltered).</td></tr>
+            <tr><td>Turn slider</td><td>Filter the timeline to a single turn number. Set to 0 to show all turns. The label changes from "(all)" to "(T<em>n</em>)" when filtering is active.</td></tr>
+            <tr><td><strong>◀ / ▶</strong></td><td>Step backward or forward through the (filtered) timeline one action at a time. ◀ is disabled when the Initial State row is selected; ▶ is disabled at the last action.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="timeline">Timeline panel</h2>
+        <p>The timeline always opens with the <strong>Initial State</strong> row at the top (outside the scroll area). Below it, action rows appear in recording order. When a turn filter is active, rows for other turns are hidden — the visible rows are renumbered in display order but the underlying indices are unchanged.</p>
+
+        <h3>Action row layout</h3>
+        <p>Each action row is 36 px tall and shows:</p>
+        <ul>
+          <li>A <strong>4 px color bar</strong> on the left edge, color-coded by action type (see table below).</li>
+          <li>A <strong>turn chip</strong> (e.g., <em>T3</em>) in the top-left.</li>
+          <li>The <strong>phase / step</strong> label (e.g., <em>Main / PreCombatMain</em>) to the right of the chip.</li>
+          <li>The <strong>player display name</strong> and <strong>action type</strong> on the second line.</li>
+          <li>The <strong>card template ID</strong> (if the action involves a card), shown in a light blue tint.</li>
+        </ul>
+        <p>Click any row to select it; the detail panel updates immediately. The selected row highlights in blue.</p>
+
+        <h3>Action color coding</h3>
+        <table class="api-table">
+          <thead><tr><th>Color</th><th>Action type(s)</th></tr></thead>
+          <tbody>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#737378;vertical-align:middle;margin-right:6px"></span>Grey</td><td>Pass</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#4dbf66;vertical-align:middle;margin-right:6px"></span>Green</td><td>Act</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#e67233;vertical-align:middle;margin-right:6px"></span>Orange</td><td>Declare Attacker</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#4d8ce6;vertical-align:middle;margin-right:6px"></span>Blue</td><td>Declare Blocker</td></tr>
+            <tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#d93f3f;vertical-align:middle;margin-right:6px"></span>Red</td><td>Remove Attacker, Remove Blocker</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="detail">Detail panel</h2>
+        <p>The right panel shows different content depending on which timeline row is selected.</p>
+
+        <h3>Initial State detail</h3>
+        <p>Selecting the <em>Initial State</em> row shows a structured breakdown of the <code>GameSnapshot</code> captured at recording start:</p>
+        <table class="api-table">
+          <thead><tr><th>Section</th><th>Fields shown</th></tr></thead>
+          <tbody>
+            <tr><td>Initial State</td><td>CapturedAt timestamp, Turn number, Active player name, Priority player name.</td></tr>
+            <tr><td>Players</td><td>Display name for every player in the snapshot.</td></tr>
+            <tr><td>Zones</td><td>Zone definition name, owner display name (or "Shared"), and card count for every zone captured in the snapshot.</td></tr>
+            <tr><td>Stack</td><td>Controller name and description for each stack entry (only shown when the stack is non-empty at capture time).</td></tr>
+            <tr><td>Resources</td><td>For each resource pool: player name, resource type name, and a formatted list of subtype amounts.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Action detail</h3>
+        <p>Selecting an action row shows the full <code>ActionRecord</code> fields:</p>
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>Turn</td><td>Turn number when the action was recorded.</td></tr>
+            <tr><td>Phase</td><td>Phase name (e.g., <em>Main</em>, <em>Combat</em>).</td></tr>
+            <tr><td>Step</td><td>Step name within the phase, if applicable (e.g., <em>DeclareAttackers</em>). Omitted when empty.</td></tr>
+            <tr><td>Player</td><td>Display name of the acting player.</td></tr>
+            <tr><td>Type</td><td>Human-readable action type string.</td></tr>
+            <tr><td>Template ID</td><td>The <code>CardTemplateId</code> of the card involved, if any.</td></tr>
+            <tr><td>Target ID</td><td>The <code>TargetTemplateId</code>, if the action targeted a specific card.</td></tr>
+            <tr><td>Notes</td><td>Free-form text logged by the game (word-wrapped). Only shown when non-empty.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="workflow">Typical workflow</h2>
+        <ol>
+          <li>Enable <code>ReplayLogger</code> in your game session. Run a match (in the Editor or a standalone build).</li>
+          <li>After the match ends, the log JSON is written to disk by your session code calling <code>GameSerializer.ReplayToJson</code>.</li>
+          <li>In the Editor, open <em>Window → Card Game Engine → Replay Viewer</em>.</li>
+          <li>Click <strong>Open…</strong> and select the log file.</li>
+          <li>Click the <strong>Initial State</strong> row to confirm the starting zone counts and resource pools look correct.</li>
+          <li>Scroll through the timeline or use <strong>▶</strong> to step action by action. Use the turn slider to focus on a particular turn.</li>
+          <li>Click any action row to examine the full detail — phase, player, card, and notes — in the right panel.</li>
+        </ol>
+
+        <div class="callout callout-tip">
+          <strong>Investigating bugs:</strong> When a player reports unexpected behavior, ask them to share the replay JSON. Load it in the Replay Viewer, filter to the reported turn, and step through actions one by one to pinpoint the first incorrect transition.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="draft-simulator.html">← Draft &amp; Booster</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="api-reference.html">API Reference →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#recording">Recording replays</a>
+          <a href="#loading">Loading a file</a>
+          <a href="#toolbar">Toolbar</a>
+          <a href="#timeline">Timeline panel</a>
+          <a href="#detail">Detail panel</a>
+          <a href="#workflow">Typical workflow</a>
+        </nav>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>
