@@ -1,0 +1,154 @@
+---
+layout: base.njk
+title: "Puzzle Mode"
+description: "Set up scripted card game scenarios with PuzzleDefinition, composable PuzzleCondition assets, and PuzzleRunner — win/loss conditions, turn limits, snapshots, and player hints all configured without code."
+pageKey: puzzle-mode
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Puzzle Mode</div>
+          <h1>Puzzle Mode</h1>
+          <p class="doc-lead">Define self-contained scenarios entirely in the Inspector: set a pre-built board state via a JSON snapshot, author win and loss conditions as ScriptableObject assets, add an optional turn limit and hint chain — then hand control to <code>PuzzleRunner</code>.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The puzzle system has three layers:</p>
+        <ul>
+          <li><strong><code>PuzzleDefinition</code></strong> — a ScriptableObject describing the scenario (board snapshot, conditions, turn limit, hints, player decks).</li>
+          <li><strong><code>PuzzleCondition</code></strong> — an abstract ScriptableObject base. Concrete subtypes (<code>ZoneCardCountCondition</code>, <code>PlayerStatCondition</code>) evaluate a <code>GameContext</code> and return true/false.</li>
+          <li><strong><code>PuzzleRunner</code></strong> — a MonoBehaviour that applies the snapshot, subscribes to turn events, evaluates conditions, and fires <code>OnWin</code> / <code>OnLoss</code> events your UI can handle.</li>
+        </ul>
+
+        <h2 id="puzzle-definition">PuzzleDefinition</h2>
+        <p>Create via <em>Card Game Engine → Puzzle → Puzzle Definition</em>.</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Puzzle Name</code></td><td>Title shown on the puzzle-select screen.</td></tr>
+            <tr><td><code>Description</code></td><td>Flavour text shown before the puzzle starts.</td></tr>
+            <tr><td><code>Preview Art</code></td><td>Sprite shown on the puzzle-select card.</td></tr>
+            <tr><td><code>Game Definition</code></td><td>The <code>GameDefinition</code> that sets up zones and players.</td></tr>
+            <tr><td><code>Player Decks</code></td><td>Per-player deck assignments (index 0 = player 1, etc.).</td></tr>
+            <tr><td><code>Starting Snapshot</code></td><td>Optional JSON string from <code>GameSerializer.SnapshotToJson()</code>. Restores a pre-set board state before the first turn. Leave empty for a clean board.</td></tr>
+            <tr><td><code>Win Conditions</code></td><td>Array of <code>PuzzleCondition</code> assets. The puzzle is won when <em>any</em> condition evaluates to true.</td></tr>
+            <tr><td><code>Loss Conditions</code></td><td>Array of <code>PuzzleCondition</code> assets. Evaluated after win conditions — simultaneous win+loss resolves as a <strong>win</strong>.</td></tr>
+            <tr><td><code>Turn Limit</code></td><td>Maximum turns before a timeout loss. 0 = no limit.</td></tr>
+            <tr><td><code>Hints</code></td><td>Ordered array of hint strings unlockable by the player.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="conditions">PuzzleCondition assets</h2>
+        <p>All condition types extend the abstract <code>PuzzleCondition</code> ScriptableObject. Implement your own by subclassing it and overriding <code>Evaluate(GameContext)</code>.</p>
+
+        <h3 id="zone-count">ZoneCardCountCondition</h3>
+        <p>Create via <em>Card Game Engine → Puzzle → Zone Card Count Condition</em>.</p>
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Zone</code></td><td>The zone definition to query.</td></tr>
+            <tr><td><code>Check Active Player</code></td><td>True = check the active player's instance of this zone. False = look up the zone without an owner (e.g. a shared battlefield).</td></tr>
+            <tr><td><code>Operator</code></td><td>Comparison: Equal, NotEqual, LessThan, LessThanOrEqual, GreaterThan, GreaterThanOrEqual.</td></tr>
+            <tr><td><code>Target Count</code></td><td>The card count to compare against.</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Example:</strong> "Win when the opponent's library reaches 0 cards" — set Zone = Library, Check Active Player = false, Operator = Equal, Target Count = 0.</p>
+
+        <h3 id="player-stat">PlayerStatCondition</h3>
+        <p>Create via <em>Card Game Engine → Puzzle → Player Stat Condition</em>.</p>
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Check Active Player</code></td><td>True = check the active player. False = condition is met when <em>any</em> non-active player satisfies it.</td></tr>
+            <tr><td><code>Resource Type</code></td><td>The resource pool to read (e.g. your Life resource type asset).</td></tr>
+            <tr><td><code>Resource Subtype</code></td><td>Optional subtype filter (e.g. a specific mana colour). Leave null for the pool's untyped total.</td></tr>
+            <tr><td><code>Operator</code></td><td>Comparison operator.</td></tr>
+            <tr><td><code>Target Value</code></td><td>The amount to compare against.</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Example:</strong> "Lose when your life reaches ≤ 0" — Check Active Player = true, Resource Type = Life, Operator = LessThanOrEqual, Target Value = 0.</p>
+
+        <h2 id="puzzle-runner">PuzzleRunner</h2>
+        <p>Attach <code>PuzzleRunner</code> alongside <code>GameBootstrapper</code> on your game-session root.</p>
+
+        <h3 id="runner-setup">Setup</h3>
+        <ol>
+          <li>Assign a <code>PuzzleDefinition</code> in the Inspector (or call <code>LoadPuzzle(def)</code> at runtime).</li>
+          <li>Wire <code>OnWin</code> and <code>OnLoss</code> to your victory and defeat overlays.</li>
+          <li>After your <code>GameBootstrapper</code> finishes constructing the <code>GameContext</code>, call <code>StartPuzzle(context)</code>.</li>
+        </ol>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// After GameBootstrapper.Setup() completes:
+puzzleRunner.StartPuzzle(gameContext);
+
+// Assign a puzzle at runtime before calling StartPuzzle.
+puzzleRunner.LoadPuzzle(puzzleDefinition);
+puzzleRunner.StartPuzzle(gameContext);
+
+// Stop and unsubscribe (also called automatically on OnDestroy).
+puzzleRunner.StopPuzzle();</code></pre>
+        </div>
+
+        <h3 id="runner-events">Events</h3>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>Payload</th><th>Fired when</th></tr></thead>
+          <tbody>
+            <tr><td><code>OnWin</code></td><td><code>PuzzleCondition</code></td><td>Any win condition evaluates to true. Payload is the matching condition.</td></tr>
+            <tr><td><code>OnLoss</code></td><td><code>PuzzleCondition</code></td><td>Any loss condition evaluates to true, or the turn limit is exceeded. Payload is null on timeout.</td></tr>
+            <tr><td><code>OnHintUnlocked</code></td><td><code>string</code></td><td>The player calls <code>UnlockNextHint()</code> and a hint is available. Payload is the hint text.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="hints">Hints</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Called by a "Hint" UI button. Returns null when all hints are exhausted.
+string hint = puzzleRunner.UnlockNextHint();
+if (hint != null) hintPanel.Show(hint);</code></pre>
+        </div>
+
+        <h2 id="snapshots">Board snapshots</h2>
+        <p>A starting snapshot lets you pre-place cards, set resource values, and apply counters before the puzzle's first turn. To create one:</p>
+        <ol>
+          <li>Set up the desired board state in a running game session.</li>
+          <li>Call <code>GameSerializer.SnapshotToJson(context)</code> to capture it.</li>
+          <li>Paste the resulting JSON string into the <code>Starting Snapshot</code> field of your <code>PuzzleDefinition</code>.</li>
+        </ol>
+        <p>Leave the field empty to start from a clean board — useful for puzzles where the player draws into their solution rather than starting mid-board.</p>
+
+        <div class="callout callout-tip">
+          Conditions are evaluated once at <code>StartPuzzle</code> time (after the snapshot is applied). This means a trivial puzzle that is already solved from the starting state fires <code>OnWin</code> immediately — useful for tutorial demos.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="deck-builder-ui.html">← Deck Builder UI</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="campaign-system.html">Campaign System →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#puzzle-definition">PuzzleDefinition</a>
+          <a href="#conditions">PuzzleCondition assets</a>
+          <a href="#zone-count">ZoneCardCountCondition</a>
+          <a href="#player-stat">PlayerStatCondition</a>
+          <a href="#puzzle-runner">PuzzleRunner</a>
+          <a href="#runner-setup">Setup</a>
+          <a href="#runner-events">Events</a>
+          <a href="#hints">Hints</a>
+          <a href="#snapshots">Board snapshots</a>
+        </nav>
+      </aside>
+</article>

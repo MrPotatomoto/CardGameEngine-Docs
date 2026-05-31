@@ -1,0 +1,202 @@
+---
+layout: base.njk
+title: "Campaign System"
+description: "Build a progression campaign with CampaignDefinition, CampaignNode, CampaignReward, CampaignSaveData, and CampaignManager — prerequisite gating, reward application, and JSON persistence all included."
+pageKey: campaign-system
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Campaign System</div>
+          <h1>Campaign System</h1>
+          <p class="doc-lead">Model a full story campaign or challenge ladder as a graph of <code>CampaignNode</code>s. Each node can run a <code>PuzzleDefinition</code> scenario or a free-play match, unlock cards and deck slots on completion, and gate access behind prerequisite nodes — all configured without writing code.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The campaign system is built from five types:</p>
+        <ul>
+          <li><strong><code>CampaignDefinition</code></strong> — the root asset: campaign name, banner, starting deck, optional format, and the list of nodes.</li>
+          <li><strong><code>CampaignNode</code></strong> — a <code>[Serializable]</code> class that lives inside a <code>CampaignDefinition</code>. References an optional <code>PuzzleDefinition</code> and <code>CampaignReward</code>, plus a list of prerequisite node IDs.</li>
+          <li><strong><code>CampaignReward</code></strong> — a ScriptableObject describing what the player earns: card unlocks, extra deck slots, and starting resource bonuses.</li>
+          <li><strong><code>CampaignSaveData</code></strong> — a <code>[Serializable]</code> class persisted as JSON in <code>Application.persistentDataPath</code>. Tracks completed nodes, claimed rewards, and unlocked card IDs.</li>
+          <li><strong><code>CampaignManager</code></strong> — a MonoBehaviour that loads/saves data, gates node access, applies rewards, and fires events your UI can react to.</li>
+        </ul>
+
+        <h2 id="campaign-definition">CampaignDefinition</h2>
+        <p>Create via <em>Card Game Engine → Campaign → Campaign Definition</em>.</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Campaign Name</code></td><td>Display name (also used as the save file identifier).</td></tr>
+            <tr><td><code>Description</code></td><td>Overview text shown on the campaign-select screen.</td></tr>
+            <tr><td><code>Banner Art</code></td><td>Sprite shown on the campaign-select screen.</td></tr>
+            <tr><td><code>Starting Deck</code></td><td>The deck the player begins the campaign with.</td></tr>
+            <tr><td><code>Format</code></td><td>Optional <code>DeckFormatDefinition</code> that restricts deck building during this campaign.</td></tr>
+            <tr><td><code>Nodes</code></td><td>All <code>CampaignNode</code>s in display order.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Look up a node by its string ID.
+CampaignNode node = campaign.GetNode("boss_1");</code></pre>
+        </div>
+
+        <h2 id="campaign-node">CampaignNode</h2>
+        <p>A <code>CampaignNode</code> is a serializable class nested inside <code>CampaignDefinition.Nodes</code>. Each node has:</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Node Id</code></td><td>Unique string identifier used in save data and prerequisite lists. Must be unique within the campaign.</td></tr>
+            <tr><td><code>Node Name</code></td><td>Display name shown on the campaign map tile.</td></tr>
+            <tr><td><code>Description</code></td><td>Flavour text shown when the player selects the node.</td></tr>
+            <tr><td><code>Map Icon</code></td><td>Sprite for the map tile.</td></tr>
+            <tr><td><code>Puzzle</code></td><td>The <code>PuzzleDefinition</code> to run. Leave null for a free-play opponent match.</td></tr>
+            <tr><td><code>Reward</code></td><td>The <code>CampaignReward</code> granted on completion. Leave null for no reward.</td></tr>
+            <tr><td><code>Required Node Ids</code></td><td>NodeIds that must be completed before this node unlocks. Leave empty to make it available from the start.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="campaign-reward">CampaignReward</h2>
+        <p>Create via <em>Card Game Engine → Campaign → Campaign Reward</em>.</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Description</code></td><td>Short text shown in the reward overlay (e.g. "You earned 2 new cards!").</td></tr>
+            <tr><td><code>Unlocked Cards</code></td><td><code>CardTemplate[]</code> added to the player's collection.</td></tr>
+            <tr><td><code>Bonus Deck Slots</code></td><td>Extra deck save slots granted. 0 = no change.</td></tr>
+            <tr><td><code>Starting Resource Bonuses</code></td><td><code>ResourceGrantEntry[]</code> applied at the start of each future game session.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="save-data">CampaignSaveData</h2>
+        <p>Save data is managed automatically by <code>CampaignManager</code>. The save file is stored at:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Text</span></div>
+          <pre><code>Application.persistentDataPath / &lt;CampaignName&gt;.campaign.json</code></pre>
+        </div>
+
+        <p>You can interact with save data directly if needed:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Load manually (returns null if no file exists).
+var save = CampaignSaveData.Load("My Campaign");
+
+// Check node and prerequisite state.
+bool done  = save.IsNodeCompleted("boss_1");
+bool ready = save.ArePrerequisitesMet(node.RequiredNodeIds);
+bool owned = save.IsCardUnlocked("dragon_001");
+
+// Serialize to JSON string.
+string json = save.ToJson();
+
+// Delete a save file.
+CampaignSaveData.Delete("My Campaign");</code></pre>
+        </div>
+
+        <h2 id="campaign-manager">CampaignManager</h2>
+        <p>Attach <code>CampaignManager</code> to a persistent scene object (e.g. your game manager singleton).</p>
+
+        <h3 id="manager-setup">Setup</h3>
+        <ol>
+          <li>Assign a <code>CampaignDefinition</code> in the Inspector.</li>
+          <li>Optionally assign a <code>GameAssetRegistry</code> so unlocked card IDs are resolved back to <code>CardTemplate</code> assets after loading.</li>
+          <li>Call <code>LoadCampaign()</code> on scene start. If no save file exists a fresh one is created automatically.</li>
+          <li>Wire <code>OnNodeCompleted</code>, <code>OnRewardClaimed</code>, and <code>OnCampaignCompleted</code> to your UI.</li>
+        </ol>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>void Start()
+{
+    campaignManager.LoadCampaign();
+    RefreshMapUI();
+}
+
+void RefreshMapUI()
+{
+    foreach (var node in campaignManager.Campaign.Nodes)
+    {
+        bool available = campaignManager.IsNodeAvailable(node);
+        bool completed = campaignManager.IsNodeCompleted(node);
+        bool locked    = campaignManager.IsNodeLocked(node);
+        mapTile.SetState(node, available, completed, locked);
+    }
+}</code></pre>
+        </div>
+
+        <h3 id="completing">Completing a node</h3>
+        <p>Call <code>CompleteNode(node)</code> from your match result handler (e.g. inside <code>PuzzleRunner.OnWin</code>):</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Wire PuzzleRunner.OnWin to this method in the Inspector.
+public void OnPuzzleWon(PuzzleCondition condition)
+{
+    campaignManager.CompleteNode(currentNode);
+    // OnNodeCompleted and OnRewardClaimed fire automatically.
+    // The save is written to disk immediately.
+}</code></pre>
+        </div>
+
+        <h3 id="manager-events">Events</h3>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>Payload</th><th>Fired when</th></tr></thead>
+          <tbody>
+            <tr><td><code>OnNodeCompleted</code></td><td><code>CampaignNode</code></td><td>A node is marked complete. Use to trigger map animations.</td></tr>
+            <tr><td><code>OnRewardClaimed</code></td><td><code>CampaignReward</code></td><td>A reward is applied. Use to show the reward overlay.</td></tr>
+            <tr><td><code>OnCampaignCompleted</code></td><td>—</td><td>Every node in the campaign is complete. Use to trigger the end credits.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="manager-api">Additional API</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// All CardTemplate assets the player has unlocked so far.
+IReadOnlyList&lt;CardTemplate&gt; unlocked = campaignManager.UnlockedCards;
+
+// Save manually (also auto-saves on ApplicationPause and ApplicationQuit).
+campaignManager.SaveCampaign();
+
+// Delete all progress and start fresh.
+campaignManager.ResetCampaign();
+
+// Check campaign completion without triggering events.
+bool finished = campaignManager.IsCampaignComplete();</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          <code>CampaignManager</code> auto-saves on <code>OnApplicationPause</code> and <code>OnApplicationQuit</code>, so players never lose progress to an unexpected close. For additional safety, call <code>SaveCampaign()</code> after any meaningful state change (e.g. after displaying the reward overlay).
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="puzzle-mode.html">← Puzzle Mode</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="api-reference.html">API Reference →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#campaign-definition">CampaignDefinition</a>
+          <a href="#campaign-node">CampaignNode</a>
+          <a href="#campaign-reward">CampaignReward</a>
+          <a href="#save-data">CampaignSaveData</a>
+          <a href="#campaign-manager">CampaignManager</a>
+          <a href="#manager-setup">Setup</a>
+          <a href="#completing">Completing a node</a>
+          <a href="#manager-events">Events</a>
+          <a href="#manager-api">Additional API</a>
+        </nav>
+      </aside>
+</article>

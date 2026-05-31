@@ -1,0 +1,135 @@
+---
+layout: base.njk
+title: "Card Rendering"
+description: "Display card faces at runtime using CardFaceRenderer and CardStatDisplay — TextMeshPro labels, artwork, stat displays, and tapped-state management, all wired from a single prefab."
+pageKey: card-rendering
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Card Rendering</div>
+          <h1>Card Rendering</h1>
+          <p class="doc-lead">Bind a live <code>CardInstance</code> to a Unity UI prefab with a single call. <code>CardFaceRenderer</code> populates every visual slot — name, type line, rules text, artwork, and stats — and responds to tap/untap state changes automatically.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The card rendering system consists of two MonoBehaviours:</p>
+        <ul>
+          <li><strong><code>CardFaceRenderer</code></strong> — the primary view component. Extends the abstract <code>CardView</code> base. Assign it to the root of your card prefab and wire all child UI slots in the Inspector.</li>
+          <li><strong><code>CardStatDisplay</code></strong> — a small component that lives on each stat chip (e.g. Power/Toughness). Knows which <code>StatDefinition</code> it displays and refreshes itself from a <code>CardInstance</code> or <code>CardDefinition</code>.</li>
+        </ul>
+        <p>A prefab builder (<em>Card Game Engine → Create → Card Prefab</em>) scaffolds a complete 315&times;440 hierarchy with all slots pre-wired so you can start immediately.</p>
+
+        <h2 id="card-face-renderer">CardFaceRenderer</h2>
+        <p>Extends <code>CardView</code> (abstract base already in the engine). Override entry points:</p>
+
+        <table class="api-table">
+          <thead><tr><th>Inspector slot</th><th>Type</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>Card Name Text</code></td><td><code>TMP_Text</code></td><td>Displays <code>CardDefinition.CardName</code>.</td></tr>
+            <tr><td><code>Type Line Text</code></td><td><code>TMP_Text</code></td><td>Built as "Supertype Type — Subtype" using an em dash.</td></tr>
+            <tr><td><code>Rules Text</code></td><td><code>TMP_Text</code></td><td>Displays <code>CardFace.RulesText</code>.</td></tr>
+            <tr><td><code>Flavor Text</code></td><td><code>TMP_Text</code></td><td>Displays <code>CardFace.FlavorText</code>; hidden when empty.</td></tr>
+            <tr><td><code>Artwork Image</code></td><td><code>Image</code></td><td>Assigned the face's <code>Artwork</code> sprite.</td></tr>
+            <tr><td><code>Frame Image</code></td><td><code>Image</code></td><td>Assigned the face's <code>FrameArt</code> sprite.</td></tr>
+            <tr><td><code>Stat Displays</code></td><td><code>CardStatDisplay[]</code></td><td>Each display refreshes itself from the live instance.</td></tr>
+            <tr><td><code>Tapped Indicator</code></td><td><code>GameObject</code></td><td>Activated / deactivated on tap state changes.</td></tr>
+            <tr><td><code>Target Highlight</code></td><td><code>Image</code></td><td>Toggled via <code>SetTargetHighlight(bool)</code>.</td></tr>
+            <tr><td><code>Selection Highlight</code></td><td><code>Image</code></td><td>Toggled via <code>SetSelectionHighlight(bool)</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="binding">Binding a card instance</h3>
+        <p><code>CardFaceRenderer</code> inherits <code>Bind(CardInstance)</code> from <code>CardView</code>, which stores the instance and calls <code>Refresh()</code>. Typically done when the card enters a visible zone:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Spawn a card view prefab and bind it to a live CardInstance.
+var go       = Instantiate(cardPrefab, handContainer);
+var renderer = go.GetComponent&lt;CardFaceRenderer&gt;();
+renderer.Bind(cardInstance);</code></pre>
+        </div>
+
+        <p>Call <code>renderer.Refresh()</code> any time the card's state changes (stat modifications, rule text updates, etc.).</p>
+
+        <h3 id="highlights">Highlights</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Show a glow when the card becomes a valid target.
+renderer.SetTargetHighlight(true);
+
+// Show a border when the player selects the card.
+renderer.SetSelectionHighlight(true);</code></pre>
+        </div>
+
+        <div class="callout callout-tip">
+          Both highlight images are separate child <code>Image</code> components so you can assign different colours, sprites, and materials per highlight type entirely from the Inspector — no code changes required.
+        </div>
+
+        <h2 id="card-stat-display">CardStatDisplay</h2>
+        <p>Place one <code>CardStatDisplay</code> per stat chip on your card prefab. Assign the matching <code>StatDefinition</code> asset and the two TMP labels:</p>
+        <table class="api-table">
+          <thead><tr><th>Inspector slot</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Stat</code></td><td>The <code>StatDefinition</code> this chip represents (e.g. your Power asset).</td></tr>
+            <tr><td><code>Value Text</code></td><td><code>TMP_Text</code> that shows the numeric value.</td></tr>
+            <tr><td><code>Label Text</code></td><td><code>TMP_Text</code> that shows the stat name (optional — can be left null).</td></tr>
+          </tbody>
+        </table>
+
+        <p>The display exposes two refresh paths:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// During gameplay — reads the live modified value from the CardInstance.
+statDisplay.Refresh(cardInstance);
+
+// In the deck builder — reads the base value from the CardDefinition.
+statDisplay.RefreshFromDefinition(cardDefinition);</code></pre>
+        </div>
+
+        <h2 id="prefab-builder">Prefab builder</h2>
+        <p>Run <em>Card Game Engine → Create → Card Prefab</em> to generate <code>Assets/CardPrefab.prefab</code>. The builder:</p>
+        <ol>
+          <li>Creates a 315&times;440 <code>RectTransform</code> hierarchy (Frame, ArtworkArea, Header, TypeLine, TextBox, StatsArea).</li>
+          <li>Attaches <code>CardFaceRenderer</code> at the root and two <code>CardStatDisplay</code> components in the stats row.</li>
+          <li>Wires every <code>[SerializeField]</code> via <code>SerializedObject</code> — no manual slot assignment needed.</li>
+          <li>Selects and pings the new prefab in the Project window.</li>
+        </ol>
+        <p>Duplicate and restyle the prefab for each card type variant (creature, spell, land, etc.) — the prefab builder gives you a working baseline to style from.</p>
+
+        <h2 id="type-line-format">Type line format</h2>
+        <p><code>CardFaceRenderer</code> builds the type line automatically from the <code>CardDefinition</code>. The format is:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">Text</span></div>
+          <pre><code>Supertype Type — Subtype
+// e.g.  Legendary Creature — Dragon Warrior
+//       Instant
+//       Artifact — Equipment</code></pre>
+        </div>
+        <p>The em dash and subtype section are omitted when not present. Supertypes and subtypes are space-joined lists from the card definition arrays.</p>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="format-legality.html">← Format Legality</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="deck-builder-ui.html">Deck Builder UI →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#card-face-renderer">CardFaceRenderer</a>
+          <a href="#binding">Binding a card instance</a>
+          <a href="#highlights">Highlights</a>
+          <a href="#card-stat-display">CardStatDisplay</a>
+          <a href="#prefab-builder">Prefab builder</a>
+          <a href="#type-line-format">Type line format</a>
+        </nav>
+      </aside>
+</article>
