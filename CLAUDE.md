@@ -40,7 +40,8 @@ For each version that adds new features (e.g. v6.2):
 ### Page-nav chain (current)
 
 ```
-... → format-legality → card-rendering → deck-builder-ui → puzzle-mode → campaign-system → api-reference
+... → format-legality → card-rendering → deck-builder-ui → puzzle-mode → campaign-system
+    → multiplayer → spectator-mode → tournament → mcts-ai → api-reference
 ```
 
 Update this comment whenever the chain changes.

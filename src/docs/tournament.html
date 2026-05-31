@@ -1,0 +1,144 @@
+---
+layout: base.njk
+title: "Tournament Brackets"
+description: "Run Single Elimination or Swiss tournaments with TournamentDefinition, TournamentBracket, and TournamentManager — automatic pairings, result recording, standings, and JSON persistence."
+pageKey: tournament
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Tournament Brackets</div>
+          <h1>Tournament Brackets</h1>
+          <p class="doc-lead">Generate pairings, record results, and track standings for Single Elimination or Swiss tournaments — all in a serializable bracket you can save and restore at any point.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The tournament system has three layers:</p>
+        <ul>
+          <li><strong><code>TournamentDefinition</code></strong> — a ScriptableObject describing the rules: bracket type, max participants, round count, and format.</li>
+          <li><strong><code>TournamentBracket</code></strong> — the live bracket: participant records, all matches across all rounds, current round index. Serializes to JSON for save/restore.</li>
+          <li><strong><code>TournamentManager</code></strong> — a MonoBehaviour that creates brackets, generates pairings, records results, and fires events.</li>
+        </ul>
+
+        <h2 id="definition">TournamentDefinition</h2>
+        <p>Create via <em>Card Game Engine → Tournament → Tournament Definition</em>.</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Tournament Name</code></td><td>Display name (e.g. "Weekly Showdown").</td></tr>
+            <tr><td><code>Bracket Type</code></td><td><strong>Single Elimination</strong> — one loss and you're out. <strong>Swiss</strong> — everyone plays every round; best record wins.</td></tr>
+            <tr><td><code>Max Participants</code></td><td>Hard cap on registrations. Single Elimination brackets round down to the nearest power of two to fill a clean bracket.</td></tr>
+            <tr><td><code>Rounds</code></td><td>For Swiss: number of rounds to play. For Single Elimination: ignored — rounds are derived from bracket size.</td></tr>
+            <tr><td><code>Format</code></td><td>Optional <code>DeckFormatDefinition</code> applied to all matches.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="manager">TournamentManager</h2>
+        <p>Attach to a persistent scene object and assign a <code>TournamentDefinition</code> in the Inspector.</p>
+
+        <h3 id="creating">Creating a tournament</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Pass a list of player display names to generate the bracket and first-round pairings.
+tournamentManager.CreateTournament(new[] {
+    "Alice", "Bob", "Carol", "Dave",
+    "Eve", "Frank", "Grace", "Hank",
+});
+
+// OnRoundStarted fires immediately with the first round's matches.</code></pre>
+        </div>
+
+        <h3 id="results">Recording results</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// After a match concludes, report the result by match ID.
+tournamentManager.ReportResult(match.MatchId, MatchResult.ParticipantAWon);
+
+// OnMatchCompleted fires.
+// When all matches in the round are complete, the manager automatically
+// advances to the next round (OnRoundStarted fires) or ends the tournament
+// (OnTournamentEnded fires).</code></pre>
+        </div>
+
+        <h3 id="events">Events</h3>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>Payload</th><th>Fired when</th></tr></thead>
+          <tbody>
+            <tr><td><code>OnRoundStarted</code></td><td><code>TournamentBracket</code></td><td>A new round's pairings have been generated. Use to refresh bracket UI.</td></tr>
+            <tr><td><code>OnMatchCompleted</code></td><td><code>TournamentMatch</code></td><td>A result is recorded for a specific match.</td></tr>
+            <tr><td><code>OnTournamentEnded</code></td><td><code>TournamentBracket</code></td><td>All rounds are complete. Read <code>GetStandings()</code> for the final ranking.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="bracket">TournamentBracket</h2>
+        <p>The bracket holds the full live state and exposes several query helpers:</p>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>var bracket = tournamentManager.Bracket;
+
+// All participants sorted by match points (wins × 3 + draws × 1).
+List&lt;TournamentParticipant&gt; standings = bracket.GetStandings();
+
+// Matches in the current round.
+List&lt;TournamentMatch&gt; current = bracket.GetCurrentRoundMatches();
+
+// All matches for one participant.
+List&lt;TournamentMatch&gt; history = bracket.GetMatchesFor(participantId);
+
+// Is the current round complete?
+bool done = bracket.IsCurrentRoundComplete();
+
+// Save and restore.
+string json = bracket.ToJson();
+TournamentBracket restored = TournamentBracket.FromJson(json);</code></pre>
+        </div>
+
+        <h2 id="pairing-algorithms">Pairing algorithms</h2>
+        <table class="api-table">
+          <thead><tr><th>Type</th><th>Algorithm</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Single Elimination</strong></td><td>Participants sorted by seed, then paired 1 vs. last, 2 vs. second-last, etc. Players eliminated after one loss. Byes awarded to odd participants.</td></tr>
+            <tr><td><strong>Swiss</strong></td><td>Participants sorted by match points descending. Nearest-record pairing, avoiding rematches where possible. Odd participant receives a bye (counts as a win).</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="match-result">MatchResult values</h2>
+        <table class="api-table">
+          <thead><tr><th>Value</th><th>Effect on records</th></tr></thead>
+          <tbody>
+            <tr><td><code>ParticipantAWon</code></td><td>A: +1 win, B: +1 loss</td></tr>
+            <tr><td><code>ParticipantBWon</code></td><td>A: +1 loss, B: +1 win</td></tr>
+            <tr><td><code>Draw</code></td><td>Both: +1 draw (1 match point each)</td></tr>
+            <tr><td><code>Bye</code></td><td>A: +1 win (auto-generated for odd participant counts)</td></tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="spectator-mode.html">← Spectator Mode</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="mcts-ai.html">MCTS AI →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#definition">TournamentDefinition</a>
+          <a href="#manager">TournamentManager</a>
+          <a href="#creating">Creating a tournament</a>
+          <a href="#results">Recording results</a>
+          <a href="#events">Events</a>
+          <a href="#bracket">TournamentBracket</a>
+          <a href="#pairing-algorithms">Pairing algorithms</a>
+          <a href="#match-result">MatchResult values</a>
+        </nav>
+      </aside>
+</article>

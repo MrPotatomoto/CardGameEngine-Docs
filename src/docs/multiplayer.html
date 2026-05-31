@@ -1,0 +1,163 @@
+---
+layout: base.njk
+title: "Multiplayer & Netcode"
+description: "Connect two players across a network using the transport-agnostic IGameTransport abstraction, NetworkGameSession, and the built-in LocalGameTransport loopback for testing."
+pageKey: multiplayer
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Multiplayer &amp; Netcode</div>
+          <h1>Multiplayer &amp; Netcode</h1>
+          <p class="doc-lead">Send player decisions over any network backend using a transport-agnostic abstraction. Implement <code>IGameTransport</code> once for your chosen backend (Unity Netcode, Mirror, Photon, raw TCP…) and the rest of the engine never changes.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>The multiplayer system is built around three ideas:</p>
+        <ul>
+          <li><strong>Host/client model.</strong> One machine runs the authoritative <code>GameContext</code> (the <em>host</em>). Other players are <em>clients</em> that send <code>GameNetworkAction</code> messages describing their decisions; the host applies them and broadcasts state snapshots.</li>
+          <li><strong>Transport abstraction.</strong> <code>IGameTransport</code> is a small interface — Connect, Disconnect, Send, and four events. Swap backends by swapping the implementation; session logic never changes.</li>
+          <li><strong>Serialized decisions.</strong> <code>GameNetworkAction</code> is a plain <code>[Serializable]</code> class transmitted as JSON. It captures enough information (card GUIDs, ability names, target lists) to replay any legal game action on the host.</li>
+        </ul>
+
+        <h2 id="itransport">IGameTransport</h2>
+        <p>Implement this interface to connect the engine to your chosen backend.</p>
+
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>bool IsConnected</code></td><td>True while an active connection exists.</td></tr>
+            <tr><td><code>string LocalPlayerId</code></td><td>Stable ID for the local endpoint. Set as <code>SenderId</code> on all outgoing messages.</td></tr>
+            <tr><td><code>void Connect()</code></td><td>Initiates the connection asynchronously. Raises <code>OnConnected</code> on success.</td></tr>
+            <tr><td><code>void Disconnect()</code></td><td>Closes the connection. Raises <code>OnDisconnected</code>.</td></tr>
+            <tr><td><code>void Send(NetworkMessage)</code></td><td>Sends a message to all connected peers.</td></tr>
+            <tr><td><code>event OnConnected</code></td><td>Raised when the connection is established.</td></tr>
+            <tr><td><code>event OnDisconnected</code></td><td>Raised when the connection closes.</td></tr>
+            <tr><td><code>event OnMessageReceived</code></td><td>Raised for each incoming <code>NetworkMessage</code>. Must be raised on the Unity main thread.</td></tr>
+            <tr><td><code>event OnError</code></td><td>Raised on transport-level errors.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-tip">
+          If your backend delivers bytes on a background thread, marshal them to the main thread (e.g. via a <code>ConcurrentQueue</code> drained in <code>Update()</code>) before raising <code>OnMessageReceived</code>. The engine assumes all events arrive on the main thread.
+        </div>
+
+        <h2 id="local-transport">LocalGameTransport (testing &amp; hot-seat)</h2>
+        <p>An in-process loopback transport included out of the box. Messages sent on one instance are immediately received by its paired peer — no sockets, no server required.</p>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Create one transport per player.
+var hostTransport   = new LocalGameTransport("host-player");
+var clientTransport = new LocalGameTransport("client-player");
+
+// Pair them — both transports raise OnConnected immediately.
+hostTransport.ConnectTo(clientTransport);
+
+// Simulate network latency during development.
+hostTransport.SimulatedLatencyMs   = 80;
+clientTransport.SimulatedLatencyMs = 80;</code></pre>
+        </div>
+
+        <h2 id="network-session">NetworkGameSession</h2>
+        <p>Attach to your game-session root alongside <code>GameBootstrapper</code>.</p>
+
+        <h3 id="session-setup">Setup</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// After GameBootstrapper constructs the GameContext:
+networkSession.Initialise(transport, gameContext);
+
+// On the host — assign the remote-player priority handler for each remote seat.
+// (Local and AI players keep their existing handlers.)
+stateMachine.OnPriorityWindowAsync = async (player, tc, gc) =>
+{
+    if (player == remotePlayer)
+        return await networkSession.HandleRemotePriorityAsync(player, tc, gc);
+    return await localAwaiter.HandlePriorityAsync(player, tc, gc);
+};</code></pre>
+        </div>
+
+        <h3 id="session-inspector">Inspector slots</h3>
+        <table class="api-table">
+          <thead><tr><th>Slot</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Is Host</code></td><td>True on the authoritative machine; false on clients.</td></tr>
+            <tr><td><code>Snapshot Interval</code></td><td>Seconds between full state-snapshot broadcasts from host to clients. Lower = less drift, more bandwidth.</td></tr>
+            <tr><td><code>OnSessionConnected</code></td><td>Fired when the transport connects.</td></tr>
+            <tr><td><code>OnSessionDisconnected</code></td><td>Fired when the connection is lost.</td></tr>
+            <tr><td><code>OnChatReceived</code></td><td>Fired with <code>"PlayerName: text"</code> when a chat message arrives.</td></tr>
+            <tr><td><code>OnSessionError</code></td><td>Fired on transport errors.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="client-sending">Sending actions from a client</h3>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Pass priority.
+networkSession.SendAction(new GameNetworkAction
+{
+    ActionType = NetworkActionType.PassPriority,
+});
+
+// Cast a card.
+networkSession.SendAction(new GameNetworkAction
+{
+    ActionType    = NetworkActionType.PlayCard,
+    CardInstanceId = cardInstance.ObjectId.ToString(),
+    TargetIds     = new[] { targetCard.ObjectId.ToString() },
+});
+
+// Declare attackers.
+networkSession.SendAction(new GameNetworkAction
+{
+    ActionType  = NetworkActionType.DeclareAttackers,
+    AttackerIds = attackers.Select(c => c.ObjectId.ToString()).ToArray(),
+});
+
+// Send a chat message.
+networkSession.SendChat("Good game!");</code></pre>
+        </div>
+
+        <h2 id="network-message">NetworkMessage &amp; GameNetworkAction</h2>
+        <p><code>NetworkMessage</code> is the outer envelope; <code>GameNetworkAction</code> is its payload for <code>NetworkMessageType.Action</code> messages. Both are plain <code>[Serializable]</code> classes JSON-encoded via <code>JsonUtility</code>.</p>
+        <table class="api-table">
+          <thead><tr><th>NetworkActionType</th><th>Relevant fields</th></tr></thead>
+          <tbody>
+            <tr><td><code>PassPriority</code></td><td>none</td></tr>
+            <tr><td><code>PlayCard</code></td><td><code>CardInstanceId</code>, optional <code>TargetIds</code></td></tr>
+            <tr><td><code>ActivateAbility</code></td><td><code>CardInstanceId</code>, <code>AbilityName</code>, optional <code>TargetIds</code></td></tr>
+            <tr><td><code>DeclareAttackers</code></td><td><code>AttackerIds</code></td></tr>
+            <tr><td><code>DeclareBlockers</code></td><td><code>AttackerIds</code> + parallel <code>BlockerIds</code></td></tr>
+            <tr><td><code>ChooseFromRevealed</code></td><td><code>ChosenIds</code></td></tr>
+            <tr><td><code>KeepHand</code> / <code>TakeMulligan</code></td><td>none</td></tr>
+          </tbody>
+        </table>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="campaign-system.html">← Campaign System</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="spectator-mode.html">Spectator Mode →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#itransport">IGameTransport</a>
+          <a href="#local-transport">LocalGameTransport</a>
+          <a href="#network-session">NetworkGameSession</a>
+          <a href="#session-setup">Setup</a>
+          <a href="#session-inspector">Inspector slots</a>
+          <a href="#client-sending">Sending actions</a>
+          <a href="#network-message">NetworkMessage &amp; GameNetworkAction</a>
+        </nav>
+      </aside>
+</article>

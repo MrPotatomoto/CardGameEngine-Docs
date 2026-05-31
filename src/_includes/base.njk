@@ -126,6 +126,16 @@
         </div>
 
         <div class="nav-section">
+          <span class="nav-section-label">New in v6.2</span>
+          <ul>
+            <li><a href="multiplayer.html"{% if pageKey == "multiplayer" %} class="active"{% endif %}>Multiplayer &amp; Netcode</a></li>
+            <li><a href="spectator-mode.html"{% if pageKey == "spectator-mode" %} class="active"{% endif %}>Spectator Mode</a></li>
+            <li><a href="tournament.html"{% if pageKey == "tournament" %} class="active"{% endif %}>Tournament Brackets</a></li>
+            <li><a href="mcts-ai.html"{% if pageKey == "mcts-ai" %} class="active"{% endif %}>MCTS AI</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
           <span class="nav-section-label">Reference</span>
           <ul>
             <li><a href="api-reference.html"{% if pageKey == "api-reference" %} class="active"{% endif %}>API Reference</a></li>

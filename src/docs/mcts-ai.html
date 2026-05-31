@@ -1,0 +1,103 @@
+---
+layout: base.njk
+title: "MCTS AI"
+description: "Drop in a Monte Carlo Tree Search AI opponent with MctsStrategy and MctsConfig — configurable time budget, UCB1 exploration, and an overridable rollout policy."
+pageKey: mcts-ai
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / MCTS AI</div>
+          <h1>MCTS AI</h1>
+          <p class="doc-lead">Replace any AI player's strategy with <code>MctsStrategy</code> for a significant quality bump over random or scored play. The search runs on a background thread within a configurable time budget and returns the most-visited action when time expires.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p>Monte Carlo Tree Search explores the game tree by repeatedly simulating random playouts from the current state and backing the results up to the root. The four phases:</p>
+        <ol>
+          <li><strong>Selection</strong> — walk from the root, always choosing the child with the highest UCB1 score, until a leaf or partially-expanded node is reached.</li>
+          <li><strong>Expansion</strong> — add one new child node for an untried legal action.</li>
+          <li><strong>Rollout</strong> — play forward from the new node using a fast heuristic policy until a terminal state or depth limit, scoring the outcome.</li>
+          <li><strong>Backpropagation</strong> — propagate the score back up the tree, incrementing visit counts and total reward at every ancestor.</li>
+        </ol>
+        <p>After the time budget (or iteration cap) expires, the action leading to the <em>most-visited</em> child is returned — visit count is more robust than raw reward as a selection criterion.</p>
+
+        <h2 id="config">MctsConfig</h2>
+        <p>Create via <em>Card Game Engine → AI → MCTS Config</em> and assign it when constructing <code>MctsStrategy</code>.</p>
+
+        <table class="api-table">
+          <thead><tr><th>Field</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>Time Budget Ms</code></td><td>500</td><td>Maximum wall-clock milliseconds per priority window. The search stops when either this or Max Iterations is reached first.</td></tr>
+            <tr><td><code>Max Iterations</code></td><td>1000</td><td>Hard iteration cap regardless of time. Set to 0 to use time budget only.</td></tr>
+            <tr><td><code>Exploration Constant</code></td><td>1.414 (√2)</td><td>UCB1 exploration weight. Higher values favour unexplored branches; lower values exploit known-good lines. √2 is theoretically optimal for uniform reward distributions.</td></tr>
+            <tr><td><code>Max Rollout Depth</code></td><td>50</td><td>Maximum actions per rollout simulation. Prevents infinite-game hangs.</td></tr>
+            <tr><td><code>Rollout Pass Rate</code></td><td>0.3</td><td>Probability of passing priority at each rollout step. Higher = shorter, noisier rollouts.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="usage">Usage</h2>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Assign MctsStrategy to an AIPlayer.
+var config   = Resources.Load&lt;MctsConfig&gt;("MyMctsConfig");
+var strategy = new MctsStrategy(config);
+aiPlayer.Strategy = strategy;
+
+// Or use default parameters without a config asset:
+aiPlayer.Strategy = new MctsStrategy();</code></pre>
+        </div>
+
+        <p><code>MctsStrategy</code> implements <code>IAIStrategy</code>, so it plugs directly into any <code>AIPlayer</code> that already uses the existing strategy interface — no other wiring required.</p>
+
+        <h2 id="threading">Threading model</h2>
+        <p>The MCTS loop runs on a background <code>Thread</code> via <code>Task.Run</code>. The live <code>GameContext</code> is never mutated during the search — a <code>GameSerializer.SnapshotToJson()</code> call captures state on the main thread at the start of each priority window, and the background thread works entirely from that snapshot.</p>
+
+        <div class="callout callout-tip">
+          The default rollout uses a heuristic score (casting a card ≈ 0.7, activating an ability ≈ 0.5, passing ≈ 0.1) plus random noise rather than full game-state simulation. For higher-quality search, subclass <code>MctsStrategy</code> and override the <code>Rollout</code> method with a domain-specific evaluation function.
+        </div>
+
+        <h2 id="tuning">Tuning guidelines</h2>
+        <table class="api-table">
+          <thead><tr><th>Goal</th><th>Adjustment</th></tr></thead>
+          <tbody>
+            <tr><td>Faster decisions, lower quality</td><td>Reduce <code>Time Budget Ms</code> or <code>Max Iterations</code></td></tr>
+            <tr><td>Stronger play, more latency</td><td>Increase <code>Time Budget Ms</code></td></tr>
+            <tr><td>More exploratory (diverse) play</td><td>Increase <code>Exploration Constant</code> (try 2.0–3.0)</td></tr>
+            <tr><td>More exploitative (greedy) play</td><td>Decrease <code>Exploration Constant</code> (try 0.5–1.0)</td></tr>
+            <tr><td>Deeper rollouts</td><td>Increase <code>Max Rollout Depth</code>, decrease <code>Rollout Pass Rate</code></td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="seeded">Deterministic testing</h2>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// Pass a seeded Random for reproducible decisions in tests.
+var strategy = new MctsStrategy(config, new System.Random(42));</code></pre>
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="tournament.html">← Tournament Brackets</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="api-reference.html">API Reference →</a>
+          </div>
+        </nav>
+
+      </aside>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#config">MctsConfig</a>
+          <a href="#usage">Usage</a>
+          <a href="#threading">Threading model</a>
+          <a href="#tuning">Tuning guidelines</a>
+          <a href="#seeded">Deterministic testing</a>
+        </nav>
+      </aside>
+</article>

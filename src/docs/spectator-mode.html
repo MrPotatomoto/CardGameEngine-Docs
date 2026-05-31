@@ -1,0 +1,86 @@
+---
+layout: base.njk
+title: "Spectator Mode"
+description: "Let observers watch a live game without participating using SpectatorSession — receives state snapshots from the host and applies them to a local read-only GameContext."
+pageKey: spectator-mode
+---
+<article class="doc-content">
+
+        <div class="doc-header">
+          <div class="doc-breadcrumb"><a href="../index.html">Home</a> / Spectator Mode</div>
+          <h1>Spectator Mode</h1>
+          <p class="doc-lead">A spectator receives periodic full-state snapshots from the host and restores them locally — no action-sending, no game-state authority. Wire <code>OnSnapshotApplied</code> to refresh your board UI after each update.</p>
+        </div>
+
+        <h2 id="overview">Overview</h2>
+        <p><code>SpectatorSession</code> is a thin MonoBehaviour that sits on top of <code>IGameTransport</code>. It listens for <code>StateSnapshot</code> and <code>SpectatorSnapshot</code> messages from the host and calls <code>GameSerializer.RestoreSnapshot()</code> to bring a local <code>GameContext</code> up to date. All other message types (actions, chat, ping) are silently ignored.</p>
+        <p>Because the spectator receives <em>full</em> snapshots (not deltas), it is always eventually consistent — the view may lag by up to one snapshot interval but is never corrupted by a missed message.</p>
+
+        <h2 id="setup">Setup</h2>
+        <ol>
+          <li>Create a <code>GameContext</code> for the spectator using the same <code>GameDefinition</code> as the live match — zones and players must exist for the snapshot restore to populate correctly.</li>
+          <li>Create or obtain an <code>IGameTransport</code> connected to the host's session.</li>
+          <li>Attach <code>SpectatorSession</code> to a scene object and call <code>Initialise</code>.</li>
+          <li>Wire <code>OnSnapshotApplied</code> to trigger a full board-UI refresh.</li>
+        </ol>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// After constructing a read-only GameContext and connecting the transport:
+spectatorSession.Initialise(transport, spectatorContext);
+
+// Refresh the board every time a snapshot arrives.
+spectatorSession.OnSnapshotApplied.AddListener(boardUI.RefreshAll);</code></pre>
+        </div>
+
+        <h2 id="events">Events</h2>
+        <table class="api-table">
+          <thead><tr><th>Event</th><th>Payload</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>OnSnapshotApplied</code></td><td>—</td><td>Fired after each snapshot is successfully applied. Use to refresh board UI.</td></tr>
+            <tr><td><code>OnHostDisconnected</code></td><td>—</td><td>Fired when the host transport disconnects.</td></tr>
+            <tr><td><code>OnError</code></td><td><code>string</code></td><td>Fired on transport errors or snapshot parse failures.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="stats">Diagnostic properties</h2>
+        <div class="code-block">
+          <div class="code-header"><span class="code-lang">C#</span></div>
+          <pre><code>// How many snapshots have been applied since Initialise().
+int count = spectatorSession.SnapshotCount;
+
+// UTC time of the most recently applied snapshot.
+DateTime last = spectatorSession.LastSnapshotTime;</code></pre>
+        </div>
+
+        <h2 id="snapshot-interval">Snapshot frequency</h2>
+        <p>The host controls how often snapshots are sent via <code>NetworkGameSession</code>'s <strong>Snapshot Interval</strong> Inspector field (default: 1 second). The spectator session has no control over this. Lower intervals give a more responsive view at the cost of bandwidth; for tournament streaming consider 0.5–1 s.</p>
+
+        <div class="callout callout-tip">
+          For a smoother spectator experience, drive UI animations from the local <code>EventBus</code> of the spectator's <code>GameContext</code>. Because <code>RestoreSnapshot</code> publishes events as it moves cards between zones, zone-transition animations will trigger automatically — you only need to handle the final board refresh in <code>OnSnapshotApplied</code>.
+        </div>
+
+        <nav class="page-nav">
+          <div class="page-nav-prev">
+            <span class="page-nav-label">Previous</span>
+            <a href="multiplayer.html">← Multiplayer &amp; Netcode</a>
+          </div>
+          <div class="page-nav-next">
+            <span class="page-nav-label">Next</span>
+            <a href="tournament.html">Tournament Brackets →</a>
+          </div>
+        </nav>
+
+      </article>
+
+      <aside class="toc">
+        <p class="toc-title">On this page</p>
+        <nav class="toc-nav">
+          <a href="#overview">Overview</a>
+          <a href="#setup">Setup</a>
+          <a href="#events">Events</a>
+          <a href="#stats">Diagnostic properties</a>
+          <a href="#snapshot-interval">Snapshot frequency</a>
+        </nav>
+      </aside>
+</article>
